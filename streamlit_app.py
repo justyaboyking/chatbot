@@ -26,14 +26,6 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Show available models for debugging
-    try:
-        models = [m.name for m in genai.list_models()]
-        with st.expander("Available Gemini models"):
-            st.write(models)
-    except Exception as e:
-        st.warning(f"Could not list available models: {str(e)}")
-
     # Create a chat input field
     if prompt := st.chat_input("What is up?"):
         # Store and display the current prompt.
@@ -42,76 +34,52 @@ else:
             st.markdown(prompt)
 
         try:
-            # Find a model name that contains "gemini"
-            gemini_model_name = None
-            try:
-                for model in genai.list_models():
-                    if "gemini" in model.name.lower():
-                        gemini_model_name = model.name
-                        break
-            except:
-                # Fallback to common model names if listing fails
-                gemini_model_name = "models/gemini-1.0-pro"
+            # Use only the recommended newer model
+            model_name = "gemini-1.5-flash"
+            st.info(f"Using model: {model_name}")
             
-            if not gemini_model_name:
-                # Hardcoded fallback options to try with newer recommended models first
-                model_options = [
-                    "gemini-1.5-flash",
-                    "models/gemini-1.5-flash",
-                    "gemini-1.5-pro",
-                    "models/gemini-1.5-pro"
-                ]
-            else:
-                model_options = [gemini_model_name]
+            # Initialize the model
+            model = genai.GenerativeModel(model_name)
+            
+            # Generate content with streaming
+            with st.chat_message("assistant"):
+                response_container = st.empty()
+                full_response = ""
                 
-            # Try different model name formats
-            success = False
-            last_error = None
-            
-            for model_name in model_options:
-                try:
-                    st.info(f"Trying model: {model_name}")
-                    
-                    # Initialize the model with the current name format
-                    model = genai.GenerativeModel(model_name)
-                    
-                    # Prepare the content for the generation
-                    messages = []
-                    for msg in st.session_state.messages:
-                        if msg["role"] == "user":
-                            messages.append({"role": "user", "parts": [msg["content"]]})
-                        else:
-                            messages.append({"role": "model", "parts": [msg["content"]]})
-                    
-                    # Generate content with simple prompt approach
-                    with st.chat_message("assistant"):
-                        response_container = st.empty()
-                        full_response = ""
-                        
-                        # Try simple content generation instead of chat
-                        response = model.generate_content(
-                            prompt,
-                            stream=True
-                        )
-                        
-                        for chunk in response:
-                            if hasattr(chunk, 'text'):
-                                full_response += chunk.text
-                                response_container.markdown(full_response)
-                            
-                    # Store the response
-                    st.session_state.messages.append({"role": "assistant", "content": full_response})
-                    
-                    success = True
-                    break
+                # Generate content based on the current prompt only
+                response = model.generate_content(
+                    prompt,
+                    stream=True
+                )
                 
-                except Exception as e:
-                    last_error = str(e)
-                    continue
-            
-            if not success:
-                st.error(f"Failed to generate response with any model variant: {last_error}")
+                # Stream the response
+                for chunk in response:
+                    if hasattr(chunk, 'text'):
+                        full_response += chunk.text
+                        response_container.markdown(full_response)
+                    
+                # Store the response
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
         except Exception as e:
             st.error(f"Error generating response: {str(e)}")
-            st.info("Try checking if your API key is correct and has access to Gemini models.")
+            
+            # Try alternative approach with a different model if first one fails
+            try:
+                st.info("Trying alternative model: gemini-1.5-pro")
+                model = genai.GenerativeModel("gemini-1.5-pro")
+                
+                with st.chat_message("assistant"):
+                    response_container = st.empty()
+                    
+                    # Generate simple non-streaming response as fallback
+                    response = model.generate_content(prompt)
+                    if hasattr(response, 'text'):
+                        response_container.markdown(response.text)
+                        st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    else:
+                        response_container.markdown("Failed to generate a response.")
+                        
+            except Exception as fallback_error:
+                st.error(f"Alternative model also failed: {str(fallback_error)}")
+                st.info("Please check if your API key has access to Gemini 1.5 models.")
