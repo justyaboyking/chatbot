@@ -182,6 +182,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         transition: all 0.3s ease;
         animation: slideInRight 0.5s ease-out;
+        cursor: pointer;
     }
     
     .preset-card:hover {
@@ -206,20 +207,14 @@ st.markdown("""
         backdrop-filter: blur(5px);
     }
     
-    /* Clean footer */
-    .footer {
+    /* Watermark at top left */
+    .watermark {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(5px);
-        color: white;
-        text-align: center;
-        padding: 12px;
-        font-size: 14px;
-        border-top: 1px solid #222;
-        letter-spacing: 0.5px;
+        top: 10px;
+        left: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 12px;
+        z-index: 1000;
     }
     
     /* Cleaner warning box */
@@ -264,7 +259,7 @@ st.markdown("""
     /* Welcome screen */
     .welcome-screen {
         text-align: center;
-        padding: 50px;
+        padding: 30px;
         color: #e0e0e0;
         background-color: rgba(0, 0, 0, 0.5);
         border-radius: 16px;
@@ -272,6 +267,16 @@ st.markdown("""
         animation: fadeIn 1.5s ease-out;
         backdrop-filter: blur(10px);
         border: 1px solid #222;
+    }
+    
+    /* Settings panel */
+    .settings-panel {
+        background-color: #0a0a0a;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 16px 0;
+        border-left: 4px solid #4ecdc4;
+        animation: fadeIn 0.8s ease-out;
     }
     
     /* Cleaner scrollbars */
@@ -303,6 +308,11 @@ st.markdown("""
 <div class="stars">
     ${Array.from({length: 50}, () => '<div class="star"></div>').join('')}
 </div>
+
+<!-- Watermark -->
+<div class="watermark">
+    home work bot - made by zakaria
+</div>
 """, unsafe_allow_html=True)
 
 # App title with custom styling
@@ -313,12 +323,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Hardcoded API key and model
+# Hardcoded API key
 gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
-model_name = "gemini-1.5-flash"
-
-# Configure Gemini API
-genai.configure(api_key=gemini_api_key)
 
 # Initialize session state variables
 if "messages" not in st.session_state:
@@ -327,15 +333,110 @@ if "context" not in st.session_state:
     st.session_state.context = ""
 if "user_presets" not in st.session_state:
     st.session_state.user_presets = {}
+if "model_name" not in st.session_state:
+    st.session_state.model_name = "gemini-1.5-flash"
+if "temperature" not in st.session_state:
+    st.session_state.temperature = 0.7
 
-# Sidebar with clean design
+# Configure Gemini API
+genai.configure(api_key=gemini_api_key)
+
+# Sidebar with settings
 with st.sidebar:
-    st.header("Presets")
+    # Settings section
+    st.header("Settings")
     
-    # Define presets
-    presets = {
-        "duits deelstaten": {
-            "content": """PowerPoint Präsentation / PowerPoint Presentatie
+    # Add expandable settings panel
+    with st.expander("AI Settings", expanded=False):
+        # Model selection
+        st.subheader("AI Model")
+        model_options = {
+            "Gemini 1.5 Flash": "gemini-1.5-flash",
+            "Gemini 2.0 Flash Thinking": "gemini-2.0-flash-thinking-exp-01-21",
+            "Gemini 2.0 Flash-Lite": "gemini-2.0-flash-lite"
+        }
+        
+        selected_model = st.selectbox(
+            "Select AI Model:",
+            options=list(model_options.keys()),
+            index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
+        )
+        
+        # Update model in session state
+        st.session_state.model_name = model_options[selected_model]
+        
+        # Temperature slider
+        st.subheader("Response Style")
+        temperature = st.slider(
+            "Temperature (lower = more focused, higher = more creative):",
+            min_value=0.0,
+            max_value=1.0,
+            value=st.session_state.temperature,
+            step=0.1
+        )
+        st.session_state.temperature = temperature
+        
+        # Clear chat button in settings
+        st.subheader("Chat Management")
+        if st.button("Clear Chat History"):
+            with st.spinner("Clearing chat..."):
+                time.sleep(0.3)
+                st.session_state.messages = []
+                st.rerun()
+    
+    # Custom context section
+    st.header("Context Management")
+    if st.button("Show/Hide Context Editor"):
+        if "show_custom_context" not in st.session_state:
+            st.session_state.show_custom_context = True
+        else:
+            st.session_state.show_custom_context = not st.session_state.show_custom_context
+        st.rerun()
+    
+    # Show custom context section if toggled
+    if "show_custom_context" in st.session_state and st.session_state.show_custom_context:
+        custom_context = st.text_area(
+            "Edit context:",
+            value=st.session_state.context,
+            height=300,
+            key="custom_context"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Save", key="save_context"):
+                with st.spinner("Saving..."):
+                    time.sleep(0.3)
+                    st.session_state.context = custom_context
+                    st.success("Saved!")
+        
+        with col2:
+            if st.button("Clear", key="clear_context"):
+                with st.spinner("Clearing..."):
+                    time.sleep(0.3)
+                    st.session_state["custom_context"] = ""
+                    st.session_state.context = ""
+                    st.rerun()
+        
+        # Save as preset option
+        new_preset_name = st.text_input("Save as preset (name):")
+        if st.button("Create Preset") and new_preset_name:
+            with st.spinner("Creating preset..."):
+                time.sleep(0.3)
+                st.session_state.user_presets[new_preset_name] = custom_context
+                st.success(f"Preset '{new_preset_name}' created!")
+    
+    # Privacy notice
+    st.markdown("""
+    <div class="warning-box">
+        <strong>Privacy:</strong> Conversations are not stored and will be deleted when you leave the page.
+    </div>
+    """, unsafe_allow_html=True)
+
+# Define presets
+presets = {
+    "duits deelstaten": {
+        "content": """PowerPoint Präsentation / PowerPoint Presentatie
 Deutsch:
 Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
 Schritt 1: Schriftliche Vorbereitung
@@ -420,138 +521,41 @@ Kwaliteit van de informatie: /20
 Structuur en uiterlijk van de PowerPoint: /10
 Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!""",
-            "description": ""
-        }
+        "description": ""
     }
-    
-    # Clean preset selection with animated cards
-    st.subheader("Kies een preset:")
-    for preset_name, preset_data in presets.items():
-        # Display a clean card with animation
-        st.markdown(f"""
-        <div class="preset-card">
-            <strong>{preset_name}</strong>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Clean button for selection
-        if st.button(f"Selecteer", key=f"{preset_name.replace(' ', '_')}_btn"):
-            with st.spinner('Laden...'):
-                time.sleep(0.3)  # Slight delay for feedback
-                st.session_state.context = preset_data["content"]
-                st.rerun()
-    
-    # Show user presets if any with clean styling
-    if st.session_state.user_presets:
-        st.subheader("Je aangepaste presets:")
-        for preset_name, preset_content in st.session_state.user_presets.items():
-            description = f"Eigen preset ({len(preset_content)} karakters)"
-            st.markdown(f"""
-            <div class="preset-card">
-                <strong>{preset_name}</strong><br>
-                <small>{description}</small>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button(f"Selecteer {preset_name}", key=f"user_{preset_name.replace(' ', '_')}_btn"):
-                with st.spinner('Preset laden...'):
-                    time.sleep(0.3)
-                    st.session_state.context = preset_content
-                    st.rerun()
-    
-    # Clean custom context section
-    st.subheader("Aangepaste context")
-    
-    # Clean toggle button for custom context
-    if st.button("Aangepaste context " + ("verbergen" if "show_custom_context" in st.session_state and st.session_state.show_custom_context else "tonen")):
-        if "show_custom_context" not in st.session_state:
-            st.session_state.show_custom_context = True
-        else:
-            st.session_state.show_custom_context = not st.session_state.show_custom_context
-        st.rerun()
-    
-    # Show custom context section if toggled with clean styling
-    if "show_custom_context" in st.session_state and st.session_state.show_custom_context:
-        custom_context = st.text_area(
-            "Voeg je eigen context toe:",
-            value=st.session_state.context,
-            height=300,
-            key="custom_context"
-        )
-        
-        # Clean save buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Opslaan", key="save_context"):
-                with st.spinner("Context opslaan..."):
-                    time.sleep(0.3)
-                    st.session_state.context = custom_context
-                    st.success("Context opgeslagen!")
-        
-        with col2:
-            if st.button("Wissen", key="clear_context"):
-                with st.spinner("Wissen..."):
-                    time.sleep(0.3)
-                    st.session_state["custom_context"] = ""
-                    st.session_state.context = ""
-                    st.rerun()
-        
-        # Clean preset saving option
-        new_preset_name = st.text_input("Preset naam (optioneel):")
-        if st.button("Opslaan als preset") and new_preset_name:
-            with st.spinner("Preset opslaan..."):
-                time.sleep(0.3)
-                st.session_state.user_presets[new_preset_name] = custom_context
-                st.success(f"Preset '{new_preset_name}' opgeslagen!")
-    
-    # Clean warning box
-    st.markdown("""
-    <div class="warning-box">
-        <strong>Let op:</strong> Gesprekken worden niet opgeslagen en worden verwijderd wanneer je de pagina verlaat.
-    </div>
-    """, unsafe_allow_html=True)
+}
 
-# Clean main chat interface
+# Main chat interface with preset-focused design
 chat_container = st.container()
 
-# Clean chat clear button
-col1, col2 = st.columns([4, 1])
-with col2:
-    if st.button("Gesprek wissen"):
-        with st.spinner("Gesprek wissen..."):
-            time.sleep(0.3)
-            st.session_state.messages = []
-            st.rerun()
-
-# Display welcome screen with presets if no messages with clean styling
+# Display preset options if no messages, or regular chat UI if conversation in progress
 with chat_container:
     if not st.session_state.messages:
+        # Welcome screen with preset selection options
         st.markdown("""
         <div class="welcome-screen">
-            <h3>Welkom bij Home Work Bot</h3>
-            <p>Kies een preset om te beginnen</p>
+            <h3>Kies een preset om te beginnen</h3>
         </div>
         """, unsafe_allow_html=True)
         
-        # Display presets in the main area (not just sidebar)
-        st.subheader("Beschikbare presets:")
-        
-        # Create columns for preset cards
+        # Main preset grid - replaces the chat input initially
         preset_cols = st.columns(3)
         
-        # Display presets in a grid layout
+        # Display all available presets in a grid
         col_idx = 0
         for preset_name, preset_data in presets.items():
             with preset_cols[col_idx]:
+                # Clickable preset card
                 st.markdown(f"""
-                <div class="preset-card">
+                <div class="preset-card" id="{preset_name.replace(' ', '_')}_card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
                     <strong>{preset_name}</strong>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                if st.button(f"Selecteer", key=f"main_{preset_name.replace(' ', '_')}_btn"):
-                    with st.spinner('Laden...'):
-                        time.sleep(0.3)
+                # Hidden button that gets triggered by the card click
+                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                    with st.spinner("Loading..."):
+                        time.sleep(0.5)
                         # Set the context
                         st.session_state.context = preset_data["content"]
                         
@@ -562,66 +566,94 @@ with chat_container:
             
             # Update column index for next preset
             col_idx = (col_idx + 1) % 3
-    
-    # Display chat messages with clean styling
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-# Clean chat input
-if prompt := st.chat_input("Stel een vraag..."):
-    # Add user message to chat
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    try:
-        # Initialize the model
-        model = genai.GenerativeModel(model_name)
         
-        # Create the complete prompt including context
-        complete_prompt = prompt
-        if st.session_state.context:
-            complete_prompt = f"""
-            Context informatie:
-            {st.session_state.context}
+        # Show user presets if any
+        if st.session_state.user_presets:
+            st.subheader("Je eigen presets:")
             
-            Op basis van bovenstaande context, beantwoord deze vraag direct en bondig zonder extra disclaimers of uitleg:
-            {prompt}
+            # Create new row of columns for user presets
+            user_preset_cols = st.columns(3)
             
-            Geef alleen het antwoord zonder inleidingen, disclaimers of conclusies. Houd het kort en to-the-point.
-            """
-        
-        # Generate content with clean styling
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            
-            # Show typing indicator with clean styling
-            message_placeholder.markdown("<span style='color: #999999;'>Bezig met nadenken...</span>", unsafe_allow_html=True)
-            
-            # Generate content
-            response = model.generate_content(
-                complete_prompt,
-                stream=True
-            )
-            
-            # Stream the response with clean styling
-            for chunk in response:
-                if hasattr(chunk, 'text'):
-                    full_response += chunk.text
-                    message_placeholder.markdown(full_response)
+            # Display user presets
+            col_idx = 0
+            for preset_name, preset_content in st.session_state.user_presets.items():
+                with user_preset_cols[col_idx]:
+                    # Clickable user preset card
+                    st.markdown(f"""
+                    <div class="preset-card" id="user_{preset_name.replace(' ', '_')}_card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
+                        <strong>{preset_name}</strong>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
-            # Store the response
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
-    except Exception as e:
-        error_msg = str(e)
-        st.error(f"Fout bij het genereren van een antwoord: {error_msg}")
+                    # Hidden button for the card
+                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                        with st.spinner("Loading..."):
+                            time.sleep(0.5)
+                            # Set the context
+                            st.session_state.context = preset_content
+                            
+                            # Start the conversation
+                            st.session_state.messages.append({"role": "assistant", "content": "Wat is je vraag?"})
+                            
+                            st.rerun()
+                
+                # Update column index for next preset
+                col_idx = (col_idx + 1) % 3
+    else:
+        # Regular chat interface when conversation has started
+        # Display chat messages with styling
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-# Clean footer
-st.markdown("""
-<div class="footer">
-    home work bot - made by zakaria
-</div>
-""", unsafe_allow_html=True)
+        # Chat input only appears after selecting a preset
+        if prompt := st.chat_input("Typ je vraag..."):
+            # Add user message to chat
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            try:
+                # Initialize the model with selected settings
+                model = genai.GenerativeModel(
+                    st.session_state.model_name,
+                    generation_config={"temperature": st.session_state.temperature}
+                )
+                
+                # Create the complete prompt including context
+                complete_prompt = prompt
+                if st.session_state.context:
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Op basis van bovenstaande context, beantwoord deze vraag direct en bondig zonder extra disclaimers of uitleg:
+                    {prompt}
+                    
+                    Geef alleen het antwoord zonder inleidingen, disclaimers of conclusies. Houd het kort en to-the-point.
+                    """
+                
+                # Generate content with streaming
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = ""
+                    
+                    # Generate content
+                    response = model.generate_content(
+                        complete_prompt,
+                        stream=True
+                    )
+                    
+                    # Stream the response
+                    for chunk in response:
+                        if hasattr(chunk, 'text'):
+                            full_response += chunk.text
+                            message_placeholder.markdown(full_response)
+                            
+                    # Store the response
+                    st.session_state.messages.append({"role": "assistant", "content": full_response})
+                    
+            except Exception as e:
+                error_msg = str(e)
+                st.error(f"Fout: {error_msg}")
+                st.info("Probeer een ander AI model in de instellingen.")
