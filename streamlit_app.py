@@ -54,12 +54,12 @@ else:
                 gemini_model_name = "models/gemini-1.0-pro"
             
             if not gemini_model_name:
-                # Hardcoded fallback options to try
+                # Hardcoded fallback options to try with newer recommended models first
                 model_options = [
-                    "gemini-pro", 
-                    "gemini-1.0-pro", 
-                    "models/gemini-pro", 
-                    "models/gemini-1.0-pro"
+                    "gemini-1.5-flash",
+                    "models/gemini-1.5-flash",
+                    "gemini-1.5-pro",
+                    "models/gemini-1.5-pro"
                 ]
             else:
                 model_options = [gemini_model_name]
