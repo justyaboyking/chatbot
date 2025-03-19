@@ -526,14 +526,27 @@ if st.session_state.show_presets and not st.session_state.messages:
 
     # Display chat messages
 with main_container:
-    for message in st.session_state.messages:
+    for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             # Add copy button for each message
             st.markdown(f"""
             <div class="message-container">
                 {message["content"]}
-                <button class="copy-btn" onclick="copyToClipboard('{message["content"].replace("'", "\\'")}')">Kopiëren</button>
+                <button class="copy-btn" onclick="copyToClipboard{i}()">Kopiëren</button>
             </div>
+            <script>
+            function copyToClipboard{i}() {{
+                const text = `{message["content"]}`;
+                navigator.clipboard.writeText(text).then(function() {{
+                    const btn = document.querySelector(".copy-btn");
+                    const originalText = btn.textContent;
+                    btn.textContent = "Gekopieerd!";
+                    setTimeout(function() {{
+                        btn.textContent = originalText;
+                    }}, 1500);
+                }});
+            }}
+            </script>
             """, unsafe_allow_html=True)
     
     # Chat input
