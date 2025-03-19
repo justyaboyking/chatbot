@@ -10,132 +10,308 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS with black backgrounds for text
+# Enhanced CSS with background animations and cleaner design
 st.markdown("""
 <style>
-    /* Dark theme with black backgrounds for text */
+    /* Animated background */
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideInRight {
+        from { transform: translateX(20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+    
+    /* Main background with animation */
+    .main {
+        background: linear-gradient(-45deg, #000000, #0a0a0a, #121212, #181818);
+        background-size: 400% 400%;
+        animation: gradientAnimation 15s ease infinite;
+    }
+    
+    /* Star field animation */
+    .stars {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+    }
+    
+    .star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background-color: white;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: pulse 3s infinite;
+    }
+    
+    /* Generate 50 random stars */
+    ${Array.from({length: 50}, (_, i) => {
+        const top = Math.random() * 100;
+        const left = Math.random() * 100;
+        const animationDelay = Math.random() * 5;
+        const size = Math.random() * 2 + 1;
+        
+        return `.star:nth-child(${i+1}) {
+            top: ${top}%;
+            left: ${left}%;
+            width: ${size}px;
+            height: ${size}px;
+            animation-delay: ${animationDelay}s;
+        }`;
+    }).join('\n')}
+    
+    /* Cleaner text elements with black backgrounds */
     body {
         color: white;
-        background-color: #121212;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
     }
     
-    .main {
-        background-color: #121212;
-    }
-    
-    /* Sidebar styling */
+    /* Sidebar styling - cleaner and more minimal */
     [data-testid="stSidebar"] {
         background-color: #000000;
+        border-right: 1px solid #222;
     }
     
-    /* All text containers get black backgrounds */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
+        color: white;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        margin-top: 2rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    /* Clean, minimal text containers with black backgrounds */
     .stTextInput, .stTextArea > div > div, p, h1, h2, h3, h4, h5, h6, 
     .stMarkdown, .element-container, [data-testid="stChatMessageContent"] {
         background-color: #000000 !important;
         color: white !important;
     }
     
-    /* Chat message styling */
+    /* Modern, minimal chat messages */
     [data-testid="stChatMessage"] {
-        background-color: #000000;
-        border: 1px solid #333333;
-        border-radius: 10px;
-        margin: 10px 0;
+        background-color: #0a0a0a;
+        border: none;
+        border-radius: 12px;
+        margin: 16px 0;
+        padding: 16px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        animation: fadeIn 0.5s ease-out;
     }
     
-    /* Chat message from assistant vs user */
+    /* Different styling for assistant vs user messages */
     [data-testid="stChatMessage"][data-testid*="assistant"] {
         border-left: 3px solid #e63946;
     }
     
     [data-testid="stChatMessage"][data-testid*="user"] {
         border-left: 3px solid #4ecdc4;
+        background-color: #0e0e0e;
     }
     
-    /* Button styling */
+    /* Clean, minimal buttons */
     .stButton > button {
         background-color: #e63946;
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 1.2rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(230, 57, 70, 0.3);
     }
     
     .stButton > button:hover {
         background-color: #c1121f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(230, 57, 70, 0.4);
     }
     
-    /* Input fields */
+    /* Clean input fields */
     input, textarea {
-        background-color: #1f1f1f !important;
+        background-color: #0a0a0a !important;
         color: white !important;
-        border: 1px solid #333333 !important;
+        border: 1px solid #333 !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
     }
     
-    /* Chat input */
+    /* Modern chat input */
     [data-testid="stChatInput"] {
-        background-color: #1f1f1f;
-        border: 1px solid #333333;
+        background-color: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 30px !important;
         color: white;
+        padding: 12px 18px !important;
+        margin-top: 1rem;
     }
     
-    /* Preset cards */
+    /* Clean preset cards with subtle animation */
     .preset-card {
-        background-color: #1a1a1a;
+        background-color: #0a0a0a;
         color: white;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 10px;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
         border-left: 4px solid #e63946;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        animation: slideInRight 0.5s ease-out;
     }
     
-    /* Success messages */
+    .preset-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        border-left-color: #4ecdc4;
+    }
+    
+    /* Clean success messages */
     .stSuccess {
-        background-color: #0f3d27;
-        color: white;
+        background-color: rgba(15, 61, 39, 0.8) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        backdrop-filter: blur(5px);
     }
     
-    /* Error messages */
+    /* Clean error messages */
     .stError {
-        background-color: #3d0f0f;
-        color: white;
+        background-color: rgba(61, 15, 15, 0.8) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        backdrop-filter: blur(5px);
     }
     
-    /* Footer */
+    /* Clean footer */
     .footer {
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        background-color: #000000;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
         color: white;
         text-align: center;
-        padding: 10px;
+        padding: 12px;
         font-size: 14px;
-        border-top: 1px solid #333333;
+        border-top: 1px solid #222;
+        letter-spacing: 0.5px;
     }
     
-    /* Warning box */
+    /* Cleaner warning box */
     .warning-box {
-        background-color: #1a1a1a;
+        background-color: rgba(10, 10, 10, 0.7);
         border-left: 3px solid #e63946;
-        padding: 10px;
-        border-radius: 5px;
-        margin: 15px 0;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 16px 0;
         font-size: 14px;
         color: white;
+        animation: fadeIn 1s ease-out;
+        backdrop-filter: blur(5px);
     }
     
-    /* Spinner */
+    /* App title */
+    .app-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        animation: fadeIn 1s ease-out;
+    }
+    
+    .app-icon {
+        font-size: 2.5rem;
+        color: #e63946;
+        margin-right: 1rem;
+    }
+    
+    .app-name {
+        margin: 0;
+        padding: 0;
+        font-size: 2.2rem;
+        font-weight: 600;
+        background: linear-gradient(45deg, #e63946, #4ecdc4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }
+    
+    /* Welcome screen */
+    .welcome-screen {
+        text-align: center;
+        padding: 50px;
+        color: #e0e0e0;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 16px;
+        margin: 2rem 0;
+        animation: fadeIn 1.5s ease-out;
+        backdrop-filter: blur(10px);
+        border: 1px solid #222;
+    }
+    
+    /* Cleaner scrollbars */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #111;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+    }
+    
+    /* Loading spinner */
     .stSpinner > div {
-        border-color: #e63946 !important;
+        border-color: #e63946 transparent transparent transparent !important;
     }
 </style>
+
+<!-- Background stars effect -->
+<div class="stars">
+    ${Array.from({length: 50}, () => '<div class="star"></div>').join('')}
+</div>
 """, unsafe_allow_html=True)
 
-# App title 
-st.title("📚 Home Work Bot")
+# App title with custom styling
+st.markdown("""
+<div class="app-title">
+    <div class="app-icon">📚</div>
+    <h1 class="app-name">Home Work Bot</h1>
+</div>
+""", unsafe_allow_html=True)
 
 # Hardcoded API key and model
 gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
@@ -152,7 +328,7 @@ if "context" not in st.session_state:
 if "user_presets" not in st.session_state:
     st.session_state.user_presets = {}
 
-# Sidebar with dark theme
+# Sidebar with clean design
 with st.sidebar:
     st.header("Presets")
     
@@ -248,10 +424,10 @@ Veel succes!""",
         }
     }
     
-    # Simplified preset selection with black backgrounds
+    # Clean preset selection with animated cards
     st.subheader("Kies een preset:")
     for preset_name, preset_data in presets.items():
-        # Display a card with black background
+        # Display a clean card with animation
         st.markdown(f"""
         <div class="preset-card">
             <strong>{preset_name}</strong><br>
@@ -259,14 +435,14 @@ Veel succes!""",
         </div>
         """, unsafe_allow_html=True)
         
-        # Actual button for selection
+        # Clean button for selection
         if st.button(f"Selecteer {preset_name}", key=f"{preset_name.replace(' ', '_')}_btn"):
             with st.spinner('Preset laden...'):
                 time.sleep(0.3)  # Slight delay for feedback
                 st.session_state.context = preset_data["content"]
                 st.rerun()
     
-    # Show user presets if any
+    # Show user presets if any with clean styling
     if st.session_state.user_presets:
         st.subheader("Je aangepaste presets:")
         for preset_name, preset_content in st.session_state.user_presets.items():
@@ -284,10 +460,10 @@ Veel succes!""",
                     st.session_state.context = preset_content
                     st.rerun()
     
-    # Custom context section
+    # Clean custom context section
     st.subheader("Aangepaste context")
     
-    # Toggle button for custom context
+    # Clean toggle button for custom context
     if st.button("Aangepaste context " + ("verbergen" if "show_custom_context" in st.session_state and st.session_state.show_custom_context else "tonen")):
         if "show_custom_context" not in st.session_state:
             st.session_state.show_custom_context = True
@@ -295,7 +471,7 @@ Veel succes!""",
             st.session_state.show_custom_context = not st.session_state.show_custom_context
         st.rerun()
     
-    # Show custom context section if toggled
+    # Show custom context section if toggled with clean styling
     if "show_custom_context" in st.session_state and st.session_state.show_custom_context:
         custom_context = st.text_area(
             "Voeg je eigen context toe:",
@@ -304,22 +480,24 @@ Veel succes!""",
             key="custom_context"
         )
         
-        # Save context button
-        if st.button("Opslaan als context"):
-            with st.spinner("Context opslaan..."):
-                time.sleep(0.3)
-                st.session_state.context = custom_context
-                st.success("Context opgeslagen!")
+        # Clean save buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Opslaan", key="save_context"):
+                with st.spinner("Context opslaan..."):
+                    time.sleep(0.3)
+                    st.session_state.context = custom_context
+                    st.success("Context opgeslagen!")
         
-        # Clear context button
-        if st.button("Context wissen"):
-            with st.spinner("Wissen..."):
-                time.sleep(0.3)
-                st.session_state["custom_context"] = ""
-                st.session_state.context = ""
-                st.rerun()
+        with col2:
+            if st.button("Wissen", key="clear_context"):
+                with st.spinner("Wissen..."):
+                    time.sleep(0.3)
+                    st.session_state["custom_context"] = ""
+                    st.session_state.context = ""
+                    st.rerun()
         
-        # Save as preset option
+        # Clean preset saving option
         new_preset_name = st.text_input("Preset naam (optioneel):")
         if st.button("Opslaan als preset") and new_preset_name:
             with st.spinner("Preset opslaan..."):
@@ -327,17 +505,17 @@ Veel succes!""",
                 st.session_state.user_presets[new_preset_name] = custom_context
                 st.success(f"Preset '{new_preset_name}' opgeslagen!")
     
-    # Dutch reminder with black background
+    # Clean warning box
     st.markdown("""
     <div class="warning-box">
         <strong>Let op:</strong> Gesprekken worden niet opgeslagen en worden verwijderd wanneer je de pagina verlaat.
     </div>
     """, unsafe_allow_html=True)
 
-# Main chat interface with black background
+# Clean main chat interface
 chat_container = st.container()
 
-# Clear chat button
+# Clean chat clear button
 col1, col2 = st.columns([4, 1])
 with col2:
     if st.button("Gesprek wissen"):
@@ -346,22 +524,22 @@ with col2:
             st.session_state.messages = []
             st.rerun()
 
-# Display welcome message if no messages
+# Display welcome screen if no messages with clean styling
 with chat_container:
     if not st.session_state.messages:
         st.markdown("""
-        <div style="text-align: center; padding: 50px; color: #e0e0e0; background-color: #000000; border-radius: 10px;">
+        <div class="welcome-screen">
             <h3>Welkom bij Home Work Bot</h3>
             <p>Kies een preset of stel een vraag om te beginnen.</p>
         </div>
         """, unsafe_allow_html=True)
     
-    # Display chat messages with black backgrounds
+    # Display chat messages with clean styling
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# Chat input with black background
+# Clean chat input
 if prompt := st.chat_input("Stel een vraag..."):
     # Add user message to chat
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -383,12 +561,12 @@ if prompt := st.chat_input("Stel een vraag..."):
             {prompt}
             """
         
-        # Generate content with black background for messages
+        # Generate content with clean styling
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
             
-            # Show typing indicator with black background
+            # Show typing indicator with clean styling
             message_placeholder.markdown("<span style='color: #999999;'>Bezig met nadenken...</span>", unsafe_allow_html=True)
             
             # Generate content
@@ -397,7 +575,7 @@ if prompt := st.chat_input("Stel een vraag..."):
                 stream=True
             )
             
-            # Stream the response
+            # Stream the response with clean styling
             for chunk in response:
                 if hasattr(chunk, 'text'):
                     full_response += chunk.text
@@ -410,7 +588,7 @@ if prompt := st.chat_input("Stel een vraag..."):
         error_msg = str(e)
         st.error(f"Fout bij het genereren van een antwoord: {error_msg}")
 
-# Black background footer
+# Clean footer
 st.markdown("""
 <div class="footer">
     Home Work Bot — Gemaakt door een professioneel team © 2025
