@@ -339,7 +339,7 @@ with st.sidebar:
             st.session_state.context = presets["duits deelstaten"]["content"]
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+                "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
             })
             st.session_state.show_presets = False
             st.session_state.active_chat = "German States Reference"
@@ -537,17 +537,13 @@ st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 # Show presets if there are no messages or we're starting a new chat
 if st.session_state.show_presets and not st.session_state.messages:
     with main_container:
-        # Remove the heading "Kies een preset om te beginnen"
-        
-        # Automatically start with German States context
+        # Start with a friendly greeting in Dutch
         st.session_state.messages = []
-        st.session_state.context = presets["duits deelstaten"]["content"]
         st.session_state.messages.append({
             "role": "assistant", 
-            "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+            "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
         })
         st.session_state.show_presets = False
-        st.session_state.active_chat = "German States Reference"
         st.rerun()
 
 # Display chat messages
@@ -557,7 +553,7 @@ with main_container:
             st.markdown(message["content"])
     
     # Chat input
-    if prompt := st.chat_input("Typ je vraag..."):
+    if prompt := st.chat_input("Typ je vraag hier..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.session_state.show_presets = False
         
@@ -568,10 +564,6 @@ with main_container:
         if not st.session_state.active_chat:
             chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
             st.session_state.active_chat = chat_title
-            st.session_state.chat_history.insert(0, {
-                "title": chat_title,
-                "timestamp": "Just now"
-            })
         
         try:
             model = genai.GenerativeModel(
