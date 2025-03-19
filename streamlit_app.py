@@ -5,7 +5,7 @@ import io
 
 # Set page config
 st.set_page_config(
-    page_title="Home Work Bot",
+    page_title="Huiswerk Assistent",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -179,7 +179,7 @@ st.markdown("""
 
 <!-- Watermark -->
 <div class="watermark">
-    home work bot - made by zakaria
+    huiswerk assistent - gemaakt door zakaria
 </div>
 
 <!-- Top Bar with Model Selector -->
@@ -312,10 +312,10 @@ with st.sidebar:
     # New Chat Button
     st.markdown("""
     <div class="new-chat-btn" onclick="document.getElementById('new_chat_btn').click();">
-        <span class="icon">➕</span> New Chat
+        <span class="icon">➕</span> Nieuwe Chat
     </div>
     """, unsafe_allow_html=True)
-    if st.button("New Chat", key="new_chat_btn", help="Start a new chat"):
+    if st.button("Nieuwe Chat", key="new_chat_btn", help="Start een nieuwe chat"):
         st.session_state.messages = []
         st.session_state.show_presets = True
         st.session_state.active_chat = None
@@ -324,16 +324,16 @@ with st.sidebar:
     # Remove the Recent Chats section completely
     
     # Collapsible Gems Section
-    with st.expander("✨ Gems", expanded=False):
-        st.markdown("### Saved Responses")
+    with st.expander("✨ Bewaarde Items", expanded=False):
+        st.markdown("### Opgeslagen Antwoorden")
         
         # Make gem items clickable and functional
         st.markdown("""
         <div class="chat-history-item" onclick="document.getElementById('gem_german_states').click();">
-            <span class="icon">⭐</span> German States Reference
+            <span class="icon">⭐</span> Duitse Deelstaten Referentie
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Load", key="gem_german_states", help="Load German States Reference"):
+        if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
             # Reset the context and messages to start a fresh chat
             st.session_state.messages = []
             st.session_state.context = presets["duits deelstaten"]["content"]
@@ -346,7 +346,7 @@ with st.sidebar:
             st.rerun()
     
     # Collapsible AI Settings
-    with st.expander("🤖 AI Settings", expanded=False):
+    with st.expander("🤖 AI Instellingen", expanded=False):
         st.subheader("AI Model")
         model_options = {
             "Gemini 1.5 Flash": "gemini-1.5-flash",
@@ -355,15 +355,15 @@ with st.sidebar:
         }
         
         selected_model = st.selectbox(
-            "Select AI Model:",
+            "Selecteer AI Model:",
             options=list(model_options.keys()),
             index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
         )
         st.session_state.model_name = model_options[selected_model]
         
-        st.subheader("Response Style")
+        st.subheader("Antwoordstijl")
         temperature = st.slider(
-            "Temperature:",
+            "Temperatuur:",
             min_value=0.0,
             max_value=1.0,
             value=st.session_state.temperature,
@@ -374,9 +374,9 @@ with st.sidebar:
     # Bottom section removed - keeping only Gems expander above
     
     # Context Management (moved from old design)
-    with st.expander("📄 Context Management", expanded=False):
+    with st.expander("📄 Context Beheer", expanded=False):
         # File uploader for PDF and Word documents
-        uploaded_file = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
+        uploaded_file = st.file_uploader("Upload PDF of Word Document", type=["pdf", "docx"])
         if uploaded_file is not None:
             file_text = ""
             if uploaded_file.name.lower().endswith("pdf"):
@@ -386,27 +386,27 @@ with st.sidebar:
                     for page in reader.pages:
                         file_text += page.extract_text() + "\n"
                 except ModuleNotFoundError:
-                    st.error("PyPDF2 is not installed. Please include it in your requirements.txt.")
+                    st.error("PyPDF2 is niet geïnstalleerd. Voeg het toe aan requirements.txt.")
                 except Exception as e:
-                    st.error(f"Error reading PDF: {str(e)}")
+                    st.error(f"Fout bij het lezen van PDF: {str(e)}")
             elif uploaded_file.name.lower().endswith("docx"):
                 try:
                     import docx
                     doc = docx.Document(uploaded_file)
                     file_text = "\n".join([para.text for para in doc.paragraphs])
                 except ModuleNotFoundError:
-                    st.error("python-docx is not installed. Please include it in your requirements.txt.")
+                    st.error("python-docx is niet geïnstalleerd. Voeg het toe aan requirements.txt.")
                 except Exception as e:
-                    st.error(f"Error reading Word document: {str(e)}")
+                    st.error(f"Fout bij het lezen van Word document: {str(e)}")
             if file_text:
-                if st.button("Load File Content into Context"):
+                if st.button("Laad bestandsinhoud in context"):
                     st.session_state.context += "\n" + file_text
-                    st.success("File content added to context.")
+                    st.success("Bestandsinhoud toegevoegd aan context.")
                     st.rerun()
         
         # Text area to edit context
         custom_context = st.text_area(
-            "Edit context:",
+            "Bewerk context:",
             value=st.session_state.context,
             height=300,
             key="custom_context"
@@ -414,20 +414,20 @@ with st.sidebar:
         
         # Save Preset functionality
         if st.session_state.context.strip():
-            st.subheader("Save as Preset")
-            preset_name = st.text_input("Preset Name:", key="new_preset_name")
-            if st.button("Save Preset") and preset_name:
+            st.subheader("Opslaan als preset")
+            preset_name = st.text_input("Preset Naam:", key="new_preset_name")
+            if st.button("Preset Opslaan") and preset_name:
                 st.session_state.user_presets[preset_name] = st.session_state.context
-                st.success(f"Preset '{preset_name}' saved successfully!")
+                st.success(f"Preset '{preset_name}' succesvol opgeslagen!")
                 st.rerun()
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Save", key="save_context"):
+            if st.button("Opslaan", key="save_context"):
                 st.session_state.context = custom_context
-                st.success("Saved!")
+                st.success("Opgeslagen!")
         with col2:
-            if st.button("Clear", key="clear_context"):
+            if st.button("Wissen", key="clear_context"):
                 st.session_state["custom_context"] = ""
                 st.session_state.context = ""
                 st.rerun()
