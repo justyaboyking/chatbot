@@ -33,12 +33,13 @@ if provider == "NVIDIA":
     api_endpoint = st.sidebar.selectbox(
         "API Endpoint",
         options=[
+            "https://integrate.api.nvidia.com/v1/chat/completions",
             "https://api.nvidia.com/v1/chat/completions",
             "https://build.nvidia.com/v1/chat/completions",
             "https://build.nvidia.com/api/v1/chat/completions",
             "https://build.nvidia.com/nvidia/v1/chat/completions"
         ],
-        index=1
+        index=0
     )
 
 # Together AI configuration
