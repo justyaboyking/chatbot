@@ -161,23 +161,29 @@ st.markdown("""
         padding: 12px !important;
     }
     
-    /* Position chat input at the bottom */
+    /* Position chat input at the very bottom of the page */
     .stChatInput {
         position: fixed;
-        bottom: 20px;
+        bottom: 5px;
         left: 400px; /* Account for sidebar width */
         right: 20px;
         z-index: 1000;
+        margin-bottom: 0;
     }
     
-    /* Add padding at the bottom of chat container to make room for fixed input */
+    /* Add much more padding at the bottom of chat container */
     [data-testid="stChatMessageContainer"] {
-        padding-bottom: 80px !important;
+        padding-bottom: 120px !important;
     }
     
     /* Give chat messages more room */
     .main .block-container {
-        padding-bottom: 100px;
+        padding-bottom: 150px;
+    }
+    
+    /* Footer adjustment to make room for chat input */
+    .footer {
+        display: none; /* Hide footer to avoid overlap */
     }
     
     /* Clean preset cards with subtle animation */
@@ -616,7 +622,7 @@ with chat_container:
                 st.markdown(message["content"])
 
         # Add spacer to ensure content doesn't get hidden behind fixed chat input
-        st.markdown("<div style='height: 80px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 150px'></div>", unsafe_allow_html=True)
             
         # Chat input only appears after selecting a preset
         if prompt := st.chat_input("Typ je vraag..."):
