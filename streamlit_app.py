@@ -2,19 +2,84 @@ import streamlit as st
 import google.generativeai as genai
 from google.api_core import exceptions
 
-# Show title and description.
-st.title("💬 Gemini Chatbot")
-st.write(
-    "This is a simple chatbot that uses Google's Gemini model to generate responses. "
+# Set page config to wide mode and customize
+st.set_page_config(
+    page_title="Home Work Bot",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Sidebar for context management only
+# Custom CSS to make it look more like ChatGPT with red and white theme
+st.markdown("""
+<style>
+    /* Main red and white theme */
+    .main {
+        background-color: #ffffff;
+    }
+    .stApp {
+        background-color: #ffffff;
+    }
+    .stButton>button {
+        background-color: #e63946;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+    }
+    .stButton>button:hover {
+        background-color: #c1121f;
+    }
+    /* Chat message styling */
+    .stChatMessage {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px;
+        margin: 5px 0;
+    }
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #f8f9fa;
+    }
+    .css-1544g2n {
+        padding: 2rem 1rem;
+    }
+    /* Header styling */
+    h1, h2, h3 {
+        color: #e63946;
+    }
+    /* Input boxes */
+    .stTextInput>div>div>input {
+        border-radius: 8px;
+    }
+    /* Chat input */
+    .stChatInputContainer {
+        border-top: 1px solid #e0e0e0;
+        padding-top: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# App title
+st.title("📚 Home Work Bot")
+
+# Hardcoded API key and model
+gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
+model_name = "gemini-1.5-flash"
+
+# Configure Gemini API
+genai.configure(api_key=gemini_api_key)
+
+# Initialize session state variables
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "context" not in st.session_state:
+    st.session_state.context = ""
+if "user_presets" not in st.session_state:
+    st.session_state.user_presets = {}
+
+# Sidebar for presets and context
 with st.sidebar:
-    # Hidden configurations (not shown in UI)
-    gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Hardcoded
-    model_name = "gemini-1.5-flash"  # Hardcoded default model
-    
-    # Presets section
     st.header("Presets")
     
     # Define presets
@@ -106,138 +171,120 @@ Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!"""
     }
     
-    # Preset buttons
+    # Preset selection - clean design with buttons in a grid
+    st.subheader("Kies een preset:")
     preset_cols = st.columns(2)
     for idx, (preset_name, preset_content) in enumerate(presets.items()):
         col_idx = idx % 2
         with preset_cols[col_idx]:
             if st.button(preset_name):
                 st.session_state.context = preset_content
-                st.experimental_rerun()
-    
-    # Add more presets button
-    with st.expander("Add Custom Preset"):
-        new_preset_name = st.text_input("Preset Name")
-        if st.button("Save Current Context as Preset") and new_preset_name:
-            if "user_presets" not in st.session_state:
-                st.session_state.user_presets = {}
-            st.session_state.user_presets[new_preset_name] = st.session_state.context
-            st.success(f"Preset '{new_preset_name}' saved!")
+                st.rerun()  # Using rerun instead of experimental_rerun
     
     # Show user presets if any
-    if "user_presets" in st.session_state and st.session_state.user_presets:
-        st.subheader("Your Custom Presets")
+    if st.session_state.user_presets:
+        st.subheader("Je aangepaste presets:")
         user_preset_cols = st.columns(2)
         for idx, (preset_name, preset_content) in enumerate(st.session_state.user_presets.items()):
             col_idx = idx % 2
             with user_preset_cols[col_idx]:
                 if st.button(preset_name, key=f"user_preset_{idx}"):
                     st.session_state.context = preset_content
-                    st.experimental_rerun()
+                    st.rerun()
     
-    # Just the context management section
-    st.header("Context Management")
+    # Option to use custom context
+    st.subheader("Of maak je eigen:")
+    if st.button("Aangepaste context gebruiken"):
+        if "show_custom_context" not in st.session_state:
+            st.session_state.show_custom_context = True
+        else:
+            st.session_state.show_custom_context = not st.session_state.show_custom_context
+        st.rerun()
     
-    # Initialize context in session state if not present
-    if "context" not in st.session_state:
-        st.session_state.context = ""
+    # Show custom context section if toggled
+    if "show_custom_context" in st.session_state and st.session_state.show_custom_context:
+        st.text_area(
+            "Voeg aangepaste context toe:",
+            value=st.session_state.context,
+            height=300,
+            key="custom_context"
+        )
+        
+        if st.button("Opslaan als context"):
+            st.session_state.context = st.session_state["custom_context"]
+            st.success("Context opgeslagen!")
+        
+        # Save as preset option
+        new_preset_name = st.text_input("Preset naam (optioneel):")
+        if st.button("Opslaan als preset") and new_preset_name:
+            st.session_state.user_presets[new_preset_name] = st.session_state["custom_context"]
+            st.success(f"Preset '{new_preset_name}' opgeslagen!")
     
-    st.text(f"Current context length: {len(st.session_state.context)} characters")
-    st.session_state.context = st.text_area(
-        "Add Background Information/Context",
-        st.session_state.context,
-        height=400,
-        help="This information will be included with every prompt sent to the model."
-    )
-    
-    # File uploader for additional context
-    uploaded_file = st.file_uploader("Or Upload a Text File", type=["txt", "md", "csv", "json"])
-    if uploaded_file is not None:
-        try:
-            file_contents = uploaded_file.read().decode("utf-8")
-            file_size_kb = len(file_contents) / 1024
-            st.write(f"File size: {file_size_kb:.1f} KB")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Add File Contents to Context"):
-                    st.session_state.context += "\n\n" + file_contents
-                    st.experimental_rerun()
-            with col2:
-                if st.button("Replace Context with File"):
-                    st.session_state.context = file_contents
-                    st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Error reading file: {str(e)}")
-    
-    # Clear context button
-    if st.button("Clear Context"):
-        st.session_state.context = ""
-        st.experimental_rerun()
+    # Dutch reminder at bottom
+    st.markdown("---")
+    st.caption("**Let op:** Gesprekken worden niet opgeslagen en worden verwijderd wanneer je de pagina verlaat.")
 
 # Main chat interface
-if not gemini_api_key:
-    st.info("Please add your Google AI API key in the sidebar to continue.", icon="🗝️")
-else:
-    # Configure the Gemini API
-    genai.configure(api_key=gemini_api_key)
-
-    # Create a session state variable to store the chat messages.
-    if "messages" not in st.session_state:
+col1, col2 = st.columns([4, 1])
+with col2:
+    if st.button("Clear Chat"):
         st.session_state.messages = []
+        st.rerun()
 
-    # Display the existing chat messages
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-    # Create a chat input field
-    if prompt := st.chat_input("What is up?"):
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# Chat input
+if prompt := st.chat_input("Stel een vraag..."):
+    # Add user message to chat
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        try:
-            # Initialize the model
-            model = genai.GenerativeModel(model_name)
+    try:
+        # Initialize the model
+        model = genai.GenerativeModel(model_name)
+        
+        # Create the complete prompt including context
+        complete_prompt = prompt
+        if st.session_state.context:
+            complete_prompt = f"""
+            Context informatie:
+            {st.session_state.context}
             
-            # Create the complete prompt by combining context and the user's prompt
-            complete_prompt = prompt
-            if st.session_state.context:
-                complete_prompt = f"""
-                Context information:
-                {st.session_state.context}
-                
-                Based on the above context, please respond to this question or request:
-                {prompt}
-                """
+            Op basis van bovenstaande context, beantwoord deze vraag of verzoek:
+            {prompt}
+            """
+        
+        # Generate content with streaming
+        with st.chat_message("assistant"):
+            response_container = st.empty()
+            full_response = ""
             
-            # Generate content with streaming
-            with st.chat_message("assistant"):
-                response_container = st.empty()
-                full_response = ""
+            # Generate content with the complete prompt
+            response = model.generate_content(
+                complete_prompt,
+                stream=True
+            )
+            
+            # Stream the response
+            for chunk in response:
+                if hasattr(chunk, 'text'):
+                    full_response += chunk.text
+                    response_container.markdown(full_response)
                 
-                # Generate content with the complete prompt
-                response = model.generate_content(
-                    complete_prompt,
-                    stream=True
-                )
-                
-                # Stream the response
-                for chunk in response:
-                    if hasattr(chunk, 'text'):
-                        full_response += chunk.text
-                        response_container.markdown(full_response)
-                    
-                # Store the response (only storing the original prompt, not the context-enhanced one)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-                
-        except Exception as e:
-            st.error(f"Error generating response: {str(e)}")
-            st.info("Please check if your API key has access to Gemini 1.5 models.")
-
-    # Add a button to clear the chat history
-    if st.session_state.messages and st.button("Clear Conversation"):
-        st.session_state.messages = []
-        st.experimental_rerun()
+            # Store the response
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+    except Exception as e:
+        error_msg = str(e)
+        st.error(f"Fout bij het genereren van een antwoord: {error_msg}")
+        
+# Professional footer
+st.markdown("""
+<div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 10px; border-top: 1px solid #e0e0e0; text-align: center; font-size: 0.8em;">
+    <p>Home Work Bot - Gemaakt door een professioneel team. © 2025</p>
+</div>
+""", unsafe_allow_html=True)
