@@ -334,6 +334,8 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
         if st.button("Load", key="gem_german_states", help="Load German States Reference"):
+            # Reset the context and messages to start a fresh chat
+            st.session_state.messages = []
             st.session_state.context = presets["duits deelstaten"]["content"]
             st.session_state.messages.append({
                 "role": "assistant", 
@@ -341,23 +343,6 @@ with st.sidebar:
             })
             st.session_state.show_presets = False
             st.session_state.active_chat = "German States Reference"
-            st.rerun()
-            
-        st.markdown("""
-        <div class="chat-history-item" onclick="document.getElementById('gem_dutch_verb').click();">
-            <span class="icon">⭐</span> Dutch Verb Conjugations
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Load", key="gem_dutch_verb", help="Load Dutch Verb Conjugations"):
-            # You can customize the context for Dutch verbs here
-            dutch_verbs_context = "Help with Dutch verb conjugations for different tenses and forms."
-            st.session_state.context = dutch_verbs_context
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": "Which Dutch verb would you like me to conjugate?"
-            })
-            st.session_state.show_presets = False
-            st.session_state.active_chat = "Dutch Verb Conjugations"
             st.rerun()
     
     # Collapsible AI Settings
@@ -552,58 +537,18 @@ st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 # Show presets if there are no messages or we're starting a new chat
 if st.session_state.show_presets and not st.session_state.messages:
     with main_container:
-        st.markdown("<h2>Kies een preset om te beginnen</h2>", unsafe_allow_html=True)
-        cols = st.columns(3)
-        col_idx = 0
+        # Remove the heading "Kies een preset om te beginnen"
         
-        # Built-in presets
-        for preset_name, preset_data in presets.items():
-            with cols[col_idx]:
-                st.markdown(f"""
-                <div class="preset-card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
-                    <strong>{preset_name}</strong>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
-                    st.session_state.context = preset_data["content"]
-                    
-                    # Welcome message for German states preset
-                    welcome_msg = "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-                        
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": welcome_msg
-                    })
-                    st.session_state.show_presets = False
-                    st.session_state.active_chat = preset_name
-                    st.rerun()
-            col_idx = (col_idx + 1) % 3
-        
-        # User presets
-        if st.session_state.user_presets:
-            st.markdown("<h3>Je eigen presets:</h3>", unsafe_allow_html=True)
-            user_cols = st.columns(3)
-            col_idx = 0
-            for preset_name, preset_content in st.session_state.user_presets.items():
-                with user_cols[col_idx]:
-                    st.markdown(f"""
-                    <div class="preset-card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
-                        <strong>{preset_name}</strong>
-                        <p style="margin-top: 0.5rem; font-size: 0.9em; opacity: 0.8;">
-                            {preset_content[:100]}...
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
-                        st.session_state.context = preset_content
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": "Wat is je vraag?"
-                        })
-                        st.session_state.show_presets = False
-                        st.session_state.active_chat = preset_name
-                        st.rerun()
-                col_idx = (col_idx + 1) % 3
+        # Automatically start with German States context
+        st.session_state.messages = []
+        st.session_state.context = presets["duits deelstaten"]["content"]
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+        })
+        st.session_state.show_presets = False
+        st.session_state.active_chat = "German States Reference"
+        st.rerun()
 
 # Display chat messages
 with main_container:
