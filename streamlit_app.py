@@ -553,7 +553,7 @@ with chat_container:
                 """, unsafe_allow_html=True)
                 
                 # Hidden button that gets triggered by the card click
-                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
                     with st.spinner("Loading..."):
                         time.sleep(0.5)
                         # Set the context
@@ -586,7 +586,7 @@ with chat_container:
                     """, unsafe_allow_html=True)
                     
                     # Hidden button for the card
-                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
                         with st.spinner("Loading..."):
                             time.sleep(0.5)
                             # Set the context
