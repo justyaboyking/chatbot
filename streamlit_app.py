@@ -1,5 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
+from google.api_core import exceptions
 
 # Show title and description.
 st.title("💬 Gemini Chatbot")
@@ -25,6 +26,14 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    # Show available models for debugging
+    try:
+        models = [m.name for m in genai.list_models()]
+        with st.expander("Available Gemini models"):
+            st.write(models)
+    except Exception as e:
+        st.warning(f"Could not list available models: {str(e)}")
+
     # Create a chat input field
     if prompt := st.chat_input("What is up?"):
         # Store and display the current prompt.
@@ -32,39 +41,77 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Convert the message format to work with Gemini
-        gemini_messages = []
-        for message in st.session_state.messages:
-            role = "user" if message["role"] == "user" else "model"
-            gemini_messages.append({"role": role, "parts": [{"text": message["content"]}]})
-
-        # Generate a response using the Gemini API
         try:
-            # Initialize the Gemini model
-            model = genai.GenerativeModel('gemini-pro')
+            # Find a model name that contains "gemini"
+            gemini_model_name = None
+            try:
+                for model in genai.list_models():
+                    if "gemini" in model.name.lower():
+                        gemini_model_name = model.name
+                        break
+            except:
+                # Fallback to common model names if listing fails
+                gemini_model_name = "models/gemini-1.0-pro"
             
-            # Create a chat session
-            chat = model.start_chat(history=gemini_messages[:-1])
-            
-            # Generate the response with streaming
-            with st.chat_message("assistant"):
-                response_container = st.empty()
-                full_response = ""
+            if not gemini_model_name:
+                # Hardcoded fallback options to try
+                model_options = [
+                    "gemini-pro", 
+                    "gemini-1.0-pro", 
+                    "models/gemini-pro", 
+                    "models/gemini-1.0-pro"
+                ]
+            else:
+                model_options = [gemini_model_name]
                 
-                # Send the last user message
-                response = chat.send_message(
-                    gemini_messages[-1]["parts"][0]["text"],
-                    stream=True
-                )
+            # Try different model name formats
+            success = False
+            last_error = None
+            
+            for model_name in model_options:
+                try:
+                    st.info(f"Trying model: {model_name}")
+                    
+                    # Initialize the model with the current name format
+                    model = genai.GenerativeModel(model_name)
+                    
+                    # Prepare the content for the generation
+                    messages = []
+                    for msg in st.session_state.messages:
+                        if msg["role"] == "user":
+                            messages.append({"role": "user", "parts": [msg["content"]]})
+                        else:
+                            messages.append({"role": "model", "parts": [msg["content"]]})
+                    
+                    # Generate content with simple prompt approach
+                    with st.chat_message("assistant"):
+                        response_container = st.empty()
+                        full_response = ""
+                        
+                        # Try simple content generation instead of chat
+                        response = model.generate_content(
+                            prompt,
+                            stream=True
+                        )
+                        
+                        for chunk in response:
+                            if hasattr(chunk, 'text'):
+                                full_response += chunk.text
+                                response_container.markdown(full_response)
+                            
+                    # Store the response
+                    st.session_state.messages.append({"role": "assistant", "content": full_response})
+                    
+                    success = True
+                    break
                 
-                # Stream the response
-                for chunk in response:
-                    if hasattr(chunk, 'text'):
-                        full_response += chunk.text
-                        response_container.markdown(full_response)
+                except Exception as e:
+                    last_error = str(e)
+                    continue
             
-            # Store the assistant's response
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
+            if not success:
+                st.error(f"Failed to generate response with any model variant: {last_error}")
+                
         except Exception as e:
             st.error(f"Error generating response: {str(e)}")
+            st.info("Try checking if your API key is correct and has access to Gemini models.")
