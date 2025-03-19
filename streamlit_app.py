@@ -204,14 +204,105 @@ if "temperature" not in st.session_state:
     st.session_state.temperature = 0.7
 if "show_presets" not in st.session_state:
     st.session_state.show_presets = True
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [
-        {"title": "German States Assignment", "timestamp": "Today, 10:15 AM"},
-        {"title": "Dutch Translation Help", "timestamp": "Yesterday, 3:22 PM"},
-        {"title": "Geography Homework", "timestamp": "Mar 18, 2:45 PM"}
-    ]
 if "active_chat" not in st.session_state:
     st.session_state.active_chat = None
+
+# Define presets
+presets = {
+    "duits deelstaten": {
+        "content": """PowerPoint Präsentation / PowerPoint Presentatie
+Deutsch:
+Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
+Schritt 1: Schriftliche Vorbereitung
+Suche Informationen über dein Thema und schreibe die wichtigsten Sachen auf. Deine Vorbereitung soll diese Dinge haben:
+
+Allgemeine Informationen:
+Name:
+Hauptstadt:
+Fläche:
+Einwohnerzahl:
+Lage auf der kaart: [Füge eine Karte ein]
+Geschichte:
+Kurze Geschichte von dem Thema:
+Sehenswürdigkeiten:
+Wichtige Orte, Denkmäler oder Landschaften:
+Kultur und Traditionen:
+Regionale Feste, Bräuche, typische Essen:
+Wirtschaft:
+Wichtige Industrien und was man verdient:
+Sonstiges:
+Interessante Fakten oder besondere Sachen:
+Schreibe deine Notizen in einer guten Reihenfolge, damit deine PowerPoint eine gute Struktur hat.
+Schritt 2: Die PowerPoint-Präsentation maken
+Mache jetzt eine PowerPoint-Präsentation mit mindestens 6 Folien. Achte auf diese Punkte:
+
+Klare und einfache Struktur  
+Nicht zu viel Text auf einer Folie - Stichpunkte sind besser  
+Benutze Bilder, Karten oder Diagramme  
+Einheitliches Aussehen (Farben, Schriftarten)
+
+Schritt 3: Präsentation vor der Klasse  
+Präsentiere deine Präsentation vor der Klasse. Achte auf diese Dinge:
+
+Verständliche und deutliche Aussprache  
+Schaue die Leute an  
+Sprich nicht zu schnell  
+Benutze deine PowerPoint als Hilfe (nicht nur ablesen!)
+
+Bewertungskriterien:
+
+Qualität der Informationen: /20  
+Struktur und Aussehen der PowerPoint: /10  
+Wie du präsentierst und wie gut man dich versteht: /10  
+
+Viel Erfolg!
+Nederlands:
+Taak: Maak een PowerPoint-presentatie over een onderwerp naar keuze. Het proces omvat: schriftelijke voorbereiding, het maken van de PowerPoint-presentatie en de presentatie voor de klas.
+Stap 1: Schriftelijke Voorbereiding
+Verzamel informatie over je gekozen onderwerp en noteer de belangrijkste punten. Je voorbereiding moet de volgende aspecten bevatten:
+
+Algemene informatie:
+Naam:
+Hoofdstad:
+Oppervlakte:
+Bevolking:
+Ligging op de kaart: [Voeg een kaart toe]
+Geschiedenis:
+Korte geschiedenis van het onderwerp:
+Bezienswaardigheden:
+Belangrijke plaatsen, monumenten of landschappen:
+Cultuur en Tradities:
+Regionale festivals, gebruiken, typische gerechten:
+Economie:
+Belangrijke industrieën en wat men verdient:
+Overige:
+Interessante feiten of bijzondere dingen:
+Orden je notities in een logische volgorde om een goede structuur voor je PowerPoint-presentatie te creëren.
+Stap 2: De PowerPoint-presentatie maken
+Maak nu een PowerPoint-presentatie met minstens 6 dia's. Let op de volgende punten:
+
+Duidelijke en eenvoudige structuur  
+Niet te veel tekst op één dia - opsommingstekens zijn beter  
+Gebruik afbeeldingen, kaarten of diagrammen  
+Consistent ontwerp (kleuren, lettertypen)
+
+Stap 3: Presentatie voor de klas
+Geef je presentatie voor de klas. Let daarbij op het volgende:
+
+Verstaanbare en duidelijke uitspraak  
+Kijk de mensen aan  
+Spreek niet te snel  
+Gebruik je PowerPoint als hulp (niet alleen voorlezen!)
+
+Beoordelingscriteria:
+
+Kwaliteit van de informatie: /20  
+Structuur en uiterlijk van de PowerPoint: /10  
+Hoe je presenteert en hoe goed men je begrijpt: /10  
+
+Veel succes!"""
+    }
+}
 
 # Configure Gemini API
 genai.configure(api_key="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
