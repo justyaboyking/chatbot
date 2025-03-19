@@ -3,26 +3,91 @@ import requests
 import json
 import time
 
-# Show title and description.
-st.title("💬 Nvidia Llama 3.3 Nemotron Super 49B Chatbot")
+# Show title and description
+st.title("💬 Multi-Provider AI Chatbot")
 st.write(
-    "This is a simple chatbot that uses Nvidia's Llama 3.3 Nemotron Super 49B model to generate responses. "
-    "The API key is pre-filled, but you can change it if needed."
+    "A versatile chatbot that supports multiple AI providers including NVIDIA, Together AI, Baseten, and Fireworks AI."
 )
 
 # Configure API settings
 st.sidebar.header("API Configuration")
-nvidia_api_key = st.sidebar.text_input(
-    "Nvidia API Key", 
-    type="password", 
-    value="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"
+
+# Provider selection
+provider = st.sidebar.selectbox(
+    "Select AI Provider",
+    options=["NVIDIA", "Together AI", "Baseten", "Fireworks AI"],
+    index=0
 )
 
-model_name = st.sidebar.text_input(
-    "Model Name", 
-    value="NVIDIABuild-Autogen-30"
-)
+# NVIDIA configuration
+if provider == "NVIDIA":
+    api_key = st.sidebar.text_input(
+        "NVIDIA API Key", 
+        type="password", 
+        value="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"
+    )
+    model_name = st.sidebar.text_input(
+        "Model Name", 
+        value="NVIDIABuild-Autogen-30"
+    )
+    api_endpoint = st.sidebar.selectbox(
+        "API Endpoint",
+        options=[
+            "https://api.nvidia.com/v1/chat/completions",
+            "https://build.nvidia.com/v1/chat/completions",
+            "https://build.nvidia.com/api/v1/chat/completions",
+            "https://build.nvidia.com/nvidia/v1/chat/completions"
+        ],
+        index=1
+    )
 
+# Together AI configuration
+elif provider == "Together AI":
+    api_key = st.sidebar.text_input(
+        "Together AI API Key", 
+        type="password"
+    )
+    model_name = st.sidebar.selectbox(
+        "Model Name",
+        options=[
+            "llama-3-70b-instruct",
+            "llama-3-8b-instruct",
+            "mistral-large",
+            "togethercomputer/llama-3.1-8b-instruct"
+        ],
+        index=0
+    )
+    api_endpoint = "https://api.together.xyz/v1/chat/completions"
+
+# Baseten configuration
+elif provider == "Baseten":
+    api_key = st.sidebar.text_input(
+        "Baseten API Key", 
+        type="password"
+    )
+    model_id = st.sidebar.text_input(
+        "Model ID"
+    )
+    api_endpoint = f"https://app.baseten.co/models/{model_id}/predict"
+
+# Fireworks AI configuration
+elif provider == "Fireworks AI":
+    api_key = st.sidebar.text_input(
+        "Fireworks AI API Key", 
+        type="password"
+    )
+    model_name = st.sidebar.selectbox(
+        "Model Name",
+        options=[
+            "accounts/fireworks/models/llama-v3-70b-instruct",
+            "accounts/fireworks/models/mixtral-8x7b-instruct",
+            "accounts/fireworks/models/llama-v3-8b-instruct"
+        ],
+        index=0
+    )
+    api_endpoint = "https://api.fireworks.ai/inference/v1/chat/completions"
+
+# Common parameters
 temperature = st.sidebar.slider(
     "Temperature", 
     min_value=0.0, 
@@ -42,22 +107,10 @@ max_tokens = st.sidebar.slider(
 # Toggle advanced debugging
 debug_mode = st.sidebar.checkbox("Debug Mode")
 
-# Allow selecting between different API endpoints
-api_endpoint = st.sidebar.selectbox(
-    "API Endpoint",
-    options=[
-        "https://api.nvidia.com/v1/chat/completions",
-        "https://build.nvidia.com/v1/chat/completions",
-        "https://build.nvidia.com/api/v1/chat/completions",
-        "https://build.nvidia.com/nvidia/v1/chat/completions"
-    ],
-    index=1
-)
-
-if not nvidia_api_key:
-    st.info("Please add your Nvidia API key to continue.", icon="🗝️")
+if not api_key:
+    st.info(f"Please add your {provider} API key to continue.", icon="🗝️")
 else:
-    # Create a session state variable to store the chat messages.
+    # Create a session state variable to store the chat messages
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -69,9 +122,13 @@ else:
     # Debug information panel
     if debug_mode:
         with st.expander("Debug Information"):
+            st.write(f"Provider: {provider}")
             st.write(f"API Endpoint: {api_endpoint}")
-            st.write(f"Model Name: {model_name}")
-            st.write(f"API Key (first 10 chars): {nvidia_api_key[:10]}..." if nvidia_api_key else "No API key")
+            if provider != "Baseten":
+                st.write(f"Model Name: {model_name}")
+            else:
+                st.write(f"Model ID: {model_id}")
+            st.write(f"API Key (first 10 chars): {api_key[:10]}..." if api_key else "No API key")
             st.write(f"Number of Messages: {len(st.session_state.messages)}")
     
     # Create a chat input field
@@ -81,45 +138,87 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Prepare API request to Nvidia
+        # Prepare the API request based on the selected provider
         headers = {
-            "Authorization": f"Bearer {nvidia_api_key}",
             "Content-Type": "application/json"
         }
         
-        # Define API payload
-        payload = {
-            "model": model_name,
-            "messages": [
-                {"role": m["role"], "content": m["content"]} 
-                for m in st.session_state.messages
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": True
-        }
+        # Set authentication and payload based on provider
+        if provider == "NVIDIA":
+            headers["Authorization"] = f"Bearer {api_key}"
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": m["role"], "content": m["content"]} 
+                    for m in st.session_state.messages
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True
+            }
         
-        # Generate a response using the Nvidia API
+        elif provider == "Together AI":
+            headers["Authorization"] = f"Bearer {api_key}"
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": m["role"], "content": m["content"]} 
+                    for m in st.session_state.messages
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True
+            }
+        
+        elif provider == "Baseten":
+            headers["Authorization"] = f"Api-Key {api_key}"
+            payload = {
+                "messages": [
+                    {"role": m["role"], "content": m["content"]} 
+                    for m in st.session_state.messages
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
+        
+        elif provider == "Fireworks AI":
+            headers["Authorization"] = f"Bearer {api_key}"
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": m["role"], "content": m["content"]} 
+                    for m in st.session_state.messages
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True
+            }
+        
+        # Generate a response using the selected API
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
             
             try:
-                with st.spinner("Generating response..."):
-                    # Make the API request
+                with st.spinner(f"Generating response using {provider}..."):
+                    # Debug information
                     if debug_mode:
                         st.write("Request Payload:")
                         st.json(payload)
                         st.write("Request Headers:")
                         safe_headers = headers.copy()
-                        safe_headers["Authorization"] = safe_headers["Authorization"][:15] + "..."
+                        if "Authorization" in safe_headers:
+                            safe_headers["Authorization"] = safe_headers["Authorization"][:15] + "..."
                         st.json(safe_headers)
+                    
+                    # Make the API request
+                    is_streaming = provider != "Baseten" and payload.get("stream", False)
                     
                     response = requests.post(
                         api_endpoint,
                         headers=headers,
                         json=payload,
-                        stream=True,
+                        stream=is_streaming,
                         timeout=60
                     )
                     
@@ -135,16 +234,16 @@ else:
                             st.json(dict(response.headers))
                             
                         # Suggest troubleshooting steps
-                        st.warning("""
-                        Troubleshooting suggestions:
+                        st.warning(f"""
+                        Troubleshooting suggestions for {provider}:
                         1. Verify your API key is valid
-                        2. Try a different API endpoint from the sidebar
-                        3. Check if the model name is correct
-                        4. Make sure you have access to the Nvidia API
+                        2. Check if the model name/ID is correct
+                        3. Make sure you have access to the specified model
+                        4. Try a different API endpoint (if applicable)
                         """)
                     
-                    # Process streaming response if successful
-                    else:
+                    # Process streaming response (for providers that support it)
+                    elif is_streaming:
                         for line in response.iter_lines():
                             if not line:
                                 continue
@@ -175,6 +274,33 @@ else:
                                     if debug_mode:
                                         st.code(line_text)
                                     break
+                    
+                    # Process non-streaming response (like Baseten)
+                    else:
+                        response_json = response.json()
+                        
+                        if debug_mode:
+                            st.write("Full response:")
+                            st.json(response_json)
+                            
+                        # Extract response based on provider format
+                        if provider == "Baseten":
+                            if "model_output" in response_json:
+                                output = response_json["model_output"]
+                                if isinstance(output, dict) and "response" in output:
+                                    full_response = output["response"]
+                                else:
+                                    full_response = str(output)
+                            else:
+                                full_response = str(response_json)
+                        else:
+                            # Generic extraction for other non-streaming responses
+                            if "choices" in response_json and response_json["choices"]:
+                                if "message" in response_json["choices"][0]:
+                                    full_response = response_json["choices"][0]["message"].get("content", "")
+                        
+                        # Display the response
+                        message_placeholder.markdown(full_response)
             
             except Exception as e:
                 st.error(f"Request failed: {str(e)}")
@@ -185,7 +311,7 @@ else:
             if full_response:
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             else:
-                st.error("No response received. Check the API configuration in the sidebar and try a different endpoint.")
+                st.error(f"No response received from {provider}. Check the API configuration in the sidebar.")
     
     # Add a clear conversation button
     if st.button("Clear Conversation"):
