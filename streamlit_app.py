@@ -309,7 +309,7 @@ with st.sidebar:
     # Remove the Recent Chats section completely
     
     # Collapsible Gems Section
-    with st.expander("✨ Bewaarde Items", expanded=False):
+    with st.expander("✨ Gems", expanded=False):
         st.markdown("### Huiswerk")
         if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
             # Reset the context and messages to start a fresh chat
