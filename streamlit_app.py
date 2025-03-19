@@ -146,14 +146,31 @@ st.markdown("""
         border-radius: 0.25rem !important;
     }
     
-    /* Watermark */
+    /* Verbeterde Watermark Stijl */
     .watermark {
         position: fixed;
-        top: 10px;
-        left: 10px;
-        color: rgba(255, 255, 255, 0.3);
-        font-size: 12px;
+        bottom: 60px; /* Aangepast naar onderaan, boven het invoerveld */
+        right: 20px; /* Rechts uitlijnen */
+        color: rgba(255, 255, 255, 0.3); /* Semi-transparante witte tekst */
+        font-size: 14px; /* Iets groter lettertype */
         z-index: 1000;
+        font-weight: 500; /* Semi-bold voor betere leesbaarheid */
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Schaduw voor leesbaarheid */
+        pointer-events: none; /* Zorgt ervoor dat de watermark niet klikbaar is */
+        transform: rotate(-5deg); /* Lichte rotatie voor een watermark effect */
+        opacity: 0.7; /* Iets meer zichtbaar */
+        letter-spacing: 0.5px; /* Betere leesbaarheid */
+    }
+    
+    /* Optioneel: Animatie toevoegen om de watermark te laten pulseren */
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 0.8; }
+        100% { opacity: 0.6; }
+    }
+    
+    .watermark.animated {
+        animation: pulse 4s infinite ease-in-out;
     }
 </style>
 
@@ -172,9 +189,9 @@ function copyToClipboard(text) {
 }
 </script>
 
-<!-- Watermark -->
-<div class="watermark">
-    huiswerk assistent - gemaakt door zakaria
+<!-- Watermark met aangepaste tekst -->
+<div class="watermark animated">
+    Huiswerk Assistent v1.0 - Gemaakt door Jouw Naam
 </div>
 
 <!-- No topbar - removed -->
@@ -409,103 +426,6 @@ with st.sidebar:
                 st.session_state["custom_context"] = ""
                 st.session_state.context = ""
                 st.rerun()
-
-# Define presets
-presets = {
-    "duits deelstaten": {
-        "content": """PowerPoint Präsentation / PowerPoint Presentatie
-Deutsch:
-Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
-Schritt 1: Schriftliche Vorbereitung
-Suche Informationen über dein Thema und schreibe die wichtigsten Sachen auf. Deine Vorbereitung soll diese Dinge haben:
-
-Allgemeine Informationen:
-Name:
-Hauptstadt:
-Fläche:
-Einwohnerzahl:
-Lage auf der kaart: [Füge eine Karte ein]
-Geschichte:
-Kurze Geschichte von dem Thema:
-Sehenswürdigkeiten:
-Wichtige Orte, Denkmäler oder Landschaften:
-Kultur und Traditionen:
-Regionale Feste, Bräuche, typische Essen:
-Wirtschaft:
-Wichtige Industrien und was man verdient:
-Sonstiges:
-Interessante Fakten oder besondere Sachen:
-Schreibe deine Notizen in einer guten Reihenfolge, damit deine PowerPoint eine gute Struktur hat.
-Schritt 2: Die PowerPoint-Präsentation maken
-Mache jetzt eine PowerPoint-Präsentation mit mindestens 6 Folien. Achte auf diese Punkte:
-
-Klare und einfache Struktur  
-Nicht zu viel Text auf einer Folie - Stichpunkte sind besser  
-Benutze Bilder, Karten oder Diagramme  
-Einheitliches Aussehen (Farben, Schriftarten)
-
-Schritt 3: Präsentation vor der Klasse  
-Präsentiere deine Präsentation vor der Klasse. Achte auf diese Dinge:
-
-Verständliche und deutliche Aussprache  
-Schaue die Leute an  
-Sprich nicht zu schnell  
-Benutze deine PowerPoint als Hilfe (nicht nur ablesen!)
-
-Bewertungskriterien:
-
-Qualität der Informationen: /20  
-Struktur und Aussehen der PowerPoint: /10  
-Wie du präsentierst und wie gut man dich versteht: /10  
-
-Viel Erfolg!
-Nederlands:
-Taak: Maak een PowerPoint-presentatie over een onderwerp naar keuze. Het proces omvat: schriftelijke voorbereiding, het maken van de PowerPoint-presentatie en de presentatie voor de klas.
-Stap 1: Schriftelijke Voorbereiding
-Verzamel informatie over je gekozen onderwerp en noteer de belangrijkste punten. Je voorbereiding moet de volgende aspecten bevatten:
-
-Algemene informatie:
-Naam:
-Hoofdstad:
-Oppervlakte:
-Bevolking:
-Ligging op de kaart: [Voeg een kaart toe]
-Geschiedenis:
-Korte geschiedenis van het onderwerp:
-Bezienswaardigheden:
-Belangrijke plaatsen, monumenten of landschappen:
-Cultuur en Tradities:
-Regionale festivals, gebruiken, typische gerechten:
-Economie:
-Belangrijke industrieën en wat men verdient:
-Overige:
-Interessante feiten of bijzondere dingen:
-Orden je notities in een logische volgorde om een goede structuur voor je PowerPoint-presentatie te creëren.
-Stap 2: De PowerPoint-presentatie maken
-Maak nu een PowerPoint-presentatie met minstens 6 dia's. Let op de volgende punten:
-
-Duidelijke en eenvoudige structuur  
-Niet te veel tekst op één dia - opsommingstekens zijn beter  
-Gebruik afbeeldingen, kaarten of diagrammen  
-Consistent ontwerp (kleuren, lettertypen)
-
-Stap 3: Presentatie voor de klas
-Geef je presentatie voor de klas. Let daarbij op het volgende:
-
-Verstaanbare en duidelijke uitspraak  
-Kijk de mensen aan  
-Spreek niet te snel  
-Gebruik je PowerPoint als hulp (niet alleen voorlezen!)
-
-Beoordelingscriteria:
-
-Kwaliteit van de informatie: /20  
-Structuur en uiterlijk van de PowerPoint: /10  
-Hoe je presenteert en hoe goed men je begrijpt: /10  
-
-Veel succes!"""
-    }
-}
 
 # Main content area with chat interface
 main_container = st.container()
