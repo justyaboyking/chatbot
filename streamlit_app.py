@@ -149,28 +149,19 @@ st.markdown("""
     /* Verbeterde Watermark Stijl */
     .watermark {
         position: fixed;
-        bottom: 60px; /* Aangepast naar onderaan, boven het invoerveld */
+        bottom: 60px; /* Positie boven het invoerveld */
         right: 20px; /* Rechts uitlijnen */
-        color: rgba(255, 255, 255, 0.3); /* Semi-transparante witte tekst */
-        font-size: 14px; /* Iets groter lettertype */
+        color: rgba(255, 255, 255, 0.5); /* Beter zichtbare witte tekst */
+        font-size: 14px; /* Goed leesbaar lettertype */
         z-index: 1000;
         font-weight: 500; /* Semi-bold voor betere leesbaarheid */
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Schaduw voor leesbaarheid */
         pointer-events: none; /* Zorgt ervoor dat de watermark niet klikbaar is */
-        transform: rotate(-5deg); /* Lichte rotatie voor een watermark effect */
-        opacity: 0.7; /* Iets meer zichtbaar */
+        transform: rotate(0deg); /* Recht (geen rotatie) */
+        background-color: rgba(0, 0, 0, 0.4); /* Donkere achtergrond voor betere leesbaarheid */
+        padding: 5px 10px; /* Wat padding */
+        border-radius: 4px; /* Afgeronde hoeken */
         letter-spacing: 0.5px; /* Betere leesbaarheid */
-    }
-    
-    /* Optioneel: Animatie toevoegen om de watermark te laten pulseren */
-    @keyframes pulse {
-        0% { opacity: 0.6; }
-        50% { opacity: 0.8; }
-        100% { opacity: 0.6; }
-    }
-    
-    .watermark.animated {
-        animation: pulse 4s infinite ease-in-out;
     }
 </style>
 
@@ -190,7 +181,7 @@ function copyToClipboard(text) {
 </script>
 
 <!-- Watermark met aangepaste tekst -->
-<div class="watermark animated">
+<div class="watermark">
     Huiswerk Assistent v1.0 - Gemaakt door Jouw Naam
 </div>
 
