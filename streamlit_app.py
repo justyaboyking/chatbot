@@ -70,6 +70,17 @@ st.markdown("""
         padding: 1rem;
         margin-bottom: 1rem;
         cursor: pointer;
+        transition: transform 0.2s;
+        display: flex;
+        align-items: center;
+    }
+    .preset-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .preset-icon {
+        margin-right: 10px;
+        font-size: 24px;
     }
     /* Watermark at top left */
     .watermark {
@@ -83,6 +94,37 @@ st.markdown("""
     /* Fixed height for chat container */
     .main .block-container {
         padding-bottom: 80px;
+    }
+    /* Subject confirmation box */
+    .subject-confirmation {
+        background-color: #2e3440;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-left: 4px solid #88c0d0;
+    }
+    /* Interactive elements container */
+    .interactive-elements {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    /* Custom file uploader */
+    .custom-file-upload {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #2e3440;
+        border-radius: 5px;
+        border: 1px dashed #4c566a;
+        text-align: center;
+    }
+    /* Progress bar */
+    .stProgress > div > div {
+        background-color: #88c0d0;
+    }
+    /* Custom dropdown */
+    .custom-dropdown {
+        margin-top: 10px;
     }
 </style>
 <!-- Watermark -->
@@ -110,9 +152,146 @@ if "temperature" not in st.session_state:
     st.session_state.temperature = 0.7
 if "show_presets" not in st.session_state:
     st.session_state.show_presets = True
+if "current_step" not in st.session_state:
+    st.session_state.current_step = "welcome"
+if "file_content" not in st.session_state:
+    st.session_state.file_content = ""
+if "detected_subject" not in st.session_state:
+    st.session_state.detected_subject = None
+if "confirmed_subject" not in st.session_state:
+    st.session_state.confirmed_subject = None
+if "processing" not in st.session_state:
+    st.session_state.processing = False
+if "output" not in st.session_state:
+    st.session_state.output = None
 
 # Configure Gemini API
 genai.configure(api_key=gemini_api_key)
+
+# Subject list
+subjects = ["History", "Math", "Science", "Literature", "Languages", "Geography", "Computer Science", "Arts", "Other"]
+
+# Detect subject function
+def detect_subject(text):
+    try:
+        model = genai.GenerativeModel(st.session_state.model_name)
+        subject_prompt = f"""
+        Based on the following text, determine what academic subject this document is most likely related to.
+        Choose one from this list: {', '.join(subjects)}
+        
+        Text: {text[:1000]}  # Only use the first 1000 characters to save tokens
+        
+        Respond with just the subject name, nothing else.
+        """
+        response = model.generate_content(subject_prompt)
+        detected = response.text.strip()
+        
+        # Ensure the detected subject is in our list
+        if detected not in subjects:
+            # Find the closest match
+            for subject in subjects:
+                if subject.lower() in detected.lower():
+                    return subject
+            return "Other"
+        
+        return detected
+    except Exception as e:
+        st.error(f"Error detecting subject: {str(e)}")
+        return "Other"
+
+# Get contextual presets based on subject and content
+def get_contextual_presets(subject, content):
+    presets = []
+    
+    # Base presets that work for most subjects
+    presets.append({
+        "name": "Summarize Key Points",
+        "icon": "📝",
+        "description": "Create a concise summary of the main points"
+    })
+    
+    # Subject-specific presets
+    if subject == "History":
+        presets.append({
+            "name": "Generate Essay Outline",
+            "icon": "📑",
+            "description": "Create a structured outline for your essay"
+        })
+        presets.append({
+            "name": "Identify Key Historical Events",
+            "icon": "🏛️",
+            "description": "List and explain the important historical events"
+        })
+        
+    elif subject == "Math":
+        presets.append({
+            "name": "Step-by-Step Problem Solving",
+            "icon": "🔢",
+            "description": "Get detailed solutions with explanations"
+        })
+        presets.append({
+            "name": "Create Practice Problems",
+            "icon": "✏️",
+            "description": "Generate similar practice problems with solutions"
+        })
+        
+    elif subject == "Science":
+        presets.append({
+            "name": "Explain Scientific Concepts",
+            "icon": "🔬",
+            "description": "Get detailed explanations of key scientific concepts"
+        })
+        presets.append({
+            "name": "Create Study Questions",
+            "icon": "❓",
+            "description": "Generate questions to test your understanding"
+        })
+        
+    elif subject == "Literature":
+        presets.append({
+            "name": "Character Analysis",
+            "icon": "👤",
+            "description": "Analyze the main characters and their development"
+        })
+        presets.append({
+            "name": "Theme Exploration",
+            "icon": "🎭",
+            "description": "Identify and explore the key themes"
+        })
+        
+    elif subject == "Languages":
+        presets.append({
+            "name": "Translation Help",
+            "icon": "🌐",
+            "description": "Get assistance with translations and meanings"
+        })
+        presets.append({
+            "name": "Grammar Explanation",
+            "icon": "📕",
+            "description": "Understand grammar rules and usage"
+        })
+    
+    # Add generic presets for all subjects
+    presets.append({
+        "name": "Identify Key Terms & Definitions",
+        "icon": "📖",
+        "description": "Extract and explain important terminology"
+    })
+    
+    presets.append({
+        "name": "Create Practice Questions",
+        "icon": "❓",
+        "description": "Generate questions to test your understanding"
+    })
+    
+    # Always add the custom request option
+    presets.append({
+        "name": "Ask a Specific Question",
+        "icon": "💬",
+        "description": "Type your own custom request"
+    })
+    
+    return presets
 
 # Sidebar with settings
 with st.sidebar:
@@ -144,268 +323,347 @@ with st.sidebar:
         st.session_state.temperature = temperature
         
         st.subheader("Chat Management")
-        if st.button("Clear Chat"):
+        if st.button("Clear Chat & Start Over"):
             st.session_state.messages = []
             st.session_state.show_presets = True
+            st.session_state.current_step = "welcome"
+            st.session_state.file_content = ""
+            st.session_state.detected_subject = None
+            st.session_state.confirmed_subject = None
+            st.session_state.output = None
             st.rerun()
     
-    with st.expander("Context Management", expanded=False):
-        # File uploader for PDF and Word documents
-        uploaded_file = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
-        if uploaded_file is not None:
-            file_text = ""
-            if uploaded_file.name.lower().endswith("pdf"):
-                try:
-                    import PyPDF2
-                    reader = PyPDF2.PdfReader(uploaded_file)
-                    for page in reader.pages:
-                        file_text += page.extract_text() + "\n"
-                except ModuleNotFoundError:
-                    st.error("PyPDF2 is not installed. Please include it in your requirements.txt.")
-                except Exception as e:
-                    st.error(f"Error reading PDF: {str(e)}")
-            elif uploaded_file.name.lower().endswith("docx"):
-                try:
-                    import docx
-                    doc = docx.Document(uploaded_file)
-                    file_text = "\n".join([para.text for para in doc.paragraphs])
-                except ModuleNotFoundError:
-                    st.error("python-docx is not installed. Please include it in your requirements.txt.")
-                except Exception as e:
-                    st.error(f"Error reading Word document: {str(e)}")
-            if file_text:
-                if st.button("Load File Content into Context"):
-                    st.session_state.context += "\n" + file_text
-                    st.success("File content added to context.")
-                    st.rerun()
+    with st.expander("User Presets", expanded=False):
+        if st.session_state.user_presets:
+            st.subheader("Your saved presets:")
+            for preset_name, preset_content in st.session_state.user_presets.items():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(preset_name)
+                with col2:
+                    if st.button("Load", key=f"load_{preset_name}"):
+                        st.session_state.context = preset_content
+                        st.success(f"Loaded preset: {preset_name}")
         
-        # Text area to edit context
-        custom_context = st.text_area(
-            "Edit context:",
-            value=st.session_state.context,
-            height=300,
-            key="custom_context"
-        )
-        
-        # Save Preset functionality - moved outside the nested expander
+        # Save current context as preset
         if st.session_state.context.strip():
-            st.subheader("Save as Preset")
+            st.subheader("Save current context as preset")
             preset_name = st.text_input("Preset Name:", key="new_preset_name")
             if st.button("Save Preset") and preset_name:
                 st.session_state.user_presets[preset_name] = st.session_state.context
                 st.success(f"Preset '{preset_name}' saved successfully!")
                 st.rerun()
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Save", key="save_context"):
-                st.session_state.context = custom_context
-                st.success("Saved!")
-        with col2:
-            if st.button("Clear", key="clear_context"):
-                st.session_state["custom_context"] = ""
-                st.session_state.context = ""
-                st.rerun()
-
-# Define presets
-presets = {
-    "duits deelstaten": {
-        "content": """PowerPoint Präsentation / PowerPoint Presentatie
-Deutsch:
-Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
-Schritt 1: Schriftliche Vorbereitung
-Suche Informationen über dein Thema und schreibe die wichtigsten Sachen auf. Deine Vorbereitung soll diese Dinge haben:
-
-Allgemeine Informationen:
-Name:
-Hauptstadt:
-Fläche:
-Einwohnerzahl:
-Lage auf der kaart: [Füge eine Karte ein]
-Geschichte:
-Kurze Geschichte von dem Thema:
-Sehenswürdigkeiten:
-Wichtige Orte, Denkmäler oder Landschaften:
-Kultur und Traditionen:
-Regionale Feste, Bräuche, typische Essen:
-Wirtschaft:
-Wichtige Industrien und was man verdient:
-Sonstiges:
-Interessante Fakten oder besondere Sachen:
-Schreibe deine Notizen in einer guten Reihenfolge, damit deine PowerPoint eine gute Struktur hat.
-Schritt 2: Die PowerPoint-Präsentation maken
-Mache jetzt eine PowerPoint-Präsentation mit mindestens 6 Folien. Achte auf diese Punkte:
-
-Klare und einfache Struktur  
-Nicht zu viel Text auf einer Folie - Stichpunkte sind besser  
-Benutze Bilder, Karten oder Diagramme  
-Einheitliches Aussehen (Farben, Schriftarten)
-
-Schritt 3: Präsentation vor der Klasse  
-Präsentiere deine Präsentation vor der Klasse. Achte auf diese Dinge:
-
-Verständliche und deutliche Aussprache  
-Schaue die Leute an  
-Sprich nicht zu schnell  
-Benutze deine PowerPoint als Hilfe (nicht nur ablesen!)
-
-Bewertungskriterien:
-
-Qualität der Informationen: /20  
-Struktur und Aussehen der PowerPoint: /10  
-Wie du präsentierst und wie gut man dich versteht: /10  
-
-Viel Erfolg!
-Nederlands:
-Taak: Maak een PowerPoint-presentatie over een onderwerp naar keuze. Het proces omvat: schriftelijke voorbereiding, het maken van de PowerPoint-presentatie en de presentatie voor de klas.
-Stap 1: Schriftelijke Voorbereiding
-Verzamel informatie over je gekozen onderwerp en noteer de belangrijkste punten. Je voorbereiding moet de volgende aspecten bevatten:
-
-Algemene informatie:
-Naam:
-Hoofdstad:
-Oppervlakte:
-Bevolking:
-Ligging op de kaart: [Voeg een kaart toe]
-Geschiedenis:
-Korte geschiedenis van het onderwerp:
-Bezienswaardigheden:
-Belangrijke plaatsen, monumenten of landschappen:
-Cultuur en Tradities:
-Regionale festivals, gebruiken, typische gerechten:
-Economie:
-Belangrijke industrieën en wat men verdient:
-Overige:
-Interessante feiten of bijzondere dingen:
-Orden je notities in een logische volgorde om een goede structuur voor je PowerPoint-presentatie te creëren.
-Stap 2: De PowerPoint-presentatie maken
-Maak nu een PowerPoint-presentatie met minstens 6 dia's. Let op de volgende punten:
-
-Duidelijke en eenvoudige structuur  
-Niet te veel tekst op één dia - opsommingstekens zijn beter  
-Gebruik afbeeldingen, kaarten of diagrammen  
-Consistent ontwerp (kleuren, lettertypen)
-
-Stap 3: Presentatie voor de klas
-Geef je presentatie voor de klas. Let daarbij op het volgende:
-
-Verstaanbare en duidelijke uitspraak  
-Kijk de mensen aan  
-Spreek niet te snel  
-Gebruik je PowerPoint als hulp (niet alleen voorlezen!)
-
-Beoordelingscriteria:
-
-Kwaliteit van de informatie: /20  
-Structuur en uiterlijk van de PowerPoint: /10  
-Hoe je presenteert en hoe goed men je begrijpt: /10  
-
-Veel succes!"""
-    }
-}
 
 # Main content area
 main_container = st.container()
 
-if st.session_state.show_presets and not st.session_state.messages:
+# Welcome screen
+if st.session_state.current_step == "welcome":
     with main_container:
-        st.subheader("Kies een preset om te beginnen")
-        cols = st.columns(3)
-        col_idx = 0
-        for preset_name, preset_data in presets.items():
-            with cols[col_idx]:
-                st.markdown(f"""
-                <div class="preset-card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
-                    <strong>{preset_name}</strong>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
-                    st.session_state.context = preset_data["content"]
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-                    })
-                    st.session_state.show_presets = False
-                    st.rerun()
-            col_idx = (col_idx + 1) % 3
+        st.markdown("## 👋 Welcome to Home Work Bot!")
+        st.markdown("""
+        I'm here to help you with your school assignments. Let's get started by uploading a document.
         
-        if st.session_state.user_presets:
-            st.subheader("Je eigen presets:")
-            user_cols = st.columns(3)
-            col_idx = 0
-            for preset_name, preset_content in st.session_state.user_presets.items():
-                with user_cols[col_idx]:
-                    st.markdown(f"""
-                    <div class="preset-card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
-                        <strong>{preset_name}</strong>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
-                        st.session_state.context = preset_content
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": "Wat is je vraag?"
-                        })
-                        st.session_state.show_presets = False
-                        st.rerun()
-                col_idx = (col_idx + 1) % 3
+        **What can I do?**
+        - Generate essay outlines
+        - Summarize key points
+        - Create practice questions
+        - Help with problem solving
+        - Explain complex concepts
+        - And much more!
+        """)
+        
+        st.markdown("### Upload your assignment document to get started")
+        uploaded_file = st.file_uploader("Choose a PDF or Word document", type=["pdf", "docx"], key="welcome_uploader")
+        
+        if uploaded_file is not None:
+            st.session_state.current_step = "process_file"
+            st.rerun()
 
-with main_container:
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-    
-    if prompt := st.chat_input("Typ je vraag..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.show_presets = False
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        try:
-            model = genai.GenerativeModel(
-                st.session_state.model_name,
-                generation_config={"temperature": st.session_state.temperature}
+# Process uploaded file
+elif st.session_state.current_step == "process_file":
+    with main_container:
+        st.markdown("## Processing your document...")
+        
+        # Create progress bar
+        progress_bar = st.progress(0)
+        
+        # Show processing steps
+        for i in range(101):
+            # Update progress bar
+            progress_bar.progress(i)
+            
+            # Show different messages at different stages
+            if i == 20:
+                st.info("Reading file content...")
+            elif i == 50:
+                st.info("Extracting text...")
+            elif i == 80:
+                st.info("Analyzing content...")
+                
+            time.sleep(0.02)  # Simulate processing time
+        
+        # Extract text from the document
+        file_text = "Sample document content for demonstration purposes. This is where the actual document text would be extracted."
+        
+        # Store file content in session state
+        st.session_state.file_content = file_text
+        
+        # Detect subject
+        st.session_state.detected_subject = detect_subject(file_text)
+        
+        # Move to next step
+        st.session_state.current_step = "subject_confirmation"
+        st.rerun()
+
+# Subject confirmation
+elif st.session_state.current_step == "subject_confirmation":
+    with main_container:
+        st.markdown("## Document Preview")
+        
+        # Show document preview (truncated for readability)
+        with st.expander("Document Content", expanded=False):
+            st.markdown(st.session_state.file_content[:500] + "...")
+        
+        # Subject confirmation box
+        st.markdown(
+            f"""
+            <div class="subject-confirmation">
+                <p>We think this is a <strong>{st.session_state.detected_subject}</strong> assignment. Is that correct?</p>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
+        col1, col2 = st.columns([1, 3])
+        
+        with col1:
+            if st.button("Yes, that's correct"):
+                st.session_state.confirmed_subject = st.session_state.detected_subject
+                st.session_state.current_step = "contextual_presets"
+                st.rerun()
+        
+        with col2:
+            # If subject is incorrect, allow user to select from dropdown
+            subject_choice = st.selectbox(
+                "No, it's actually:",
+                subjects,
+                index=subjects.index(st.session_state.detected_subject) if st.session_state.detected_subject in subjects else 0,
+                key="subject_dropdown"
             )
-            if st.session_state.context:
-                complete_prompt = f"""
-                Context informatie:
+            
+            if st.button("Confirm Subject"):
+                st.session_state.confirmed_subject = subject_choice
+                st.session_state.current_step = "contextual_presets"
+                st.rerun()
+
+# Contextual presets
+elif st.session_state.current_step == "contextual_presets":
+    with main_container:
+        st.markdown(f"## {st.session_state.confirmed_subject} Assignment")
+        
+        # Show document preview (truncated for readability)
+        with st.expander("Document Content", expanded=False):
+            st.markdown(st.session_state.file_content[:500] + "...")
+        
+        st.markdown("### What would you like to do with this document?")
+        
+        # Get contextual presets
+        presets = get_contextual_presets(st.session_state.confirmed_subject, st.session_state.file_content)
+        
+        # Display preset cards in a grid
+        cols = st.columns(2)
+        for i, preset in enumerate(presets):
+            with cols[i % 2]:
+                st.markdown(
+                    f"""
+                    <div class="preset-card" onclick="document.getElementById('preset_{i}_btn').click();">
+                        <div class="preset-icon">{preset["icon"]}</div>
+                        <div>
+                            <strong>{preset["name"]}</strong>
+                            <p style="margin: 0; font-size: 14px; opacity: 0.8;">{preset["description"]}</p>
+                        </div>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                # Hidden button to handle the click
+                if st.button("Select", key=f"preset_{i}_btn", style="visibility: hidden;"):
+                    if preset["name"] == "Ask a Specific Question":
+                        st.session_state.current_step = "custom_request"
+                    else:
+                        # For other presets, set context and move to processing step
+                        st.session_state.context = f"""
+                        Document: {st.session_state.file_content}
+                        
+                        Subject: {st.session_state.confirmed_subject}
+                        
+                        Task: {preset["name"]}
+                        """
+                        st.session_state.current_step = "processing"
+                    st.rerun()
+
+# Custom request
+elif st.session_state.current_step == "custom_request":
+    with main_container:
+        st.markdown(f"## {st.session_state.confirmed_subject} Assignment")
+        
+        # Show document preview
+        with st.expander("Document Content", expanded=False):
+            st.markdown(st.session_state.file_content[:500] + "...")
+        
+        st.markdown("### What specific question do you have about this document?")
+        
+        # Text input for custom question
+        custom_question = st.text_area("Type your question or request", height=100)
+        
+        if st.button("Submit", key="submit_custom"):
+            if custom_question.strip():
+                # Set context with the custom question
+                st.session_state.context = f"""
+                Document: {st.session_state.file_content}
+                
+                Subject: {st.session_state.confirmed_subject}
+                
+                User Question: {custom_question}
+                """
+                st.session_state.current_step = "processing"
+                st.rerun()
+            else:
+                st.warning("Please enter a question or request.")
+
+# Processing step
+elif st.session_state.current_step == "processing":
+    with main_container:
+        if not st.session_state.processing:
+            st.session_state.processing = True
+            
+            # Show processing UI
+            st.markdown("## Processing Your Request")
+            progress_bar = st.progress(0)
+            status_message = st.empty()
+            
+            # Simulate processing with progress updates
+            for i in range(101):
+                progress_bar.progress(i)
+                
+                if i < 20:
+                    status_message.info("Analyzing document...")
+                elif i < 40:
+                    status_message.info("Processing request...")
+                elif i < 60:
+                    status_message.info("Generating content...")
+                elif i < 80:
+                    status_message.info("Formatting response...")
+                else:
+                    status_message.info("Finalizing output...")
+                
+                time.sleep(0.03)  # Simulate processing time
+            
+            try:
+                # Process with AI
+                model = genai.GenerativeModel(
+                    st.session_state.model_name,
+                    generation_config={"temperature": st.session_state.temperature}
+                )
+                
+                # Add system prompt based on context
+                prompt = f"""
+                You are Home Work Bot, an AI assistant for students.
+                
                 {st.session_state.context}
                 
-                Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
-                
-                1. Gebruik precies de secties zoals aangegeven in de context
-                2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
-                3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
-                4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
-                5. Zorg dat elke sectie apart en duidelijk leesbaar is
-                
-                Format de tekst zo:
-                
-                Algemene Informatie:
-                
-                Naam: [naam]
-                
-                Hoofdstad: [hoofdstad]
-                
-                Fläche: [oppervlakte]
-                
-                Einwohnerzahl: [inwoners]
-                
-                Enzovoort voor alle secties uit de context.
+                Provide a helpful, educational response following these guidelines:
+                1. Format your response clearly with headings, bullet points, and numbered lists where appropriate
+                2. Be thorough but concise
+                3. Highlight key information
+                4. If explaining a concept, include examples to illustrate it
+                5. If there are steps to solve a problem, explain each step clearly
                 """
+                
+                # Call the AI model
+                response = model.generate_content(prompt)
+                
+                # Store the output
+                st.session_state.output = response.text
+                
+                # Move to results step
+                st.session_state.current_step = "results"
+                st.session_state.processing = False
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+                st.session_state.processing = False
+        else:
+            st.warning("Processing your request, please wait...")
+
+# Results step
+elif st.session_state.current_step == "results":
+    with main_container:
+        st.markdown("## Your Results")
+        
+        # Show output
+        st.markdown(st.session_state.output)
+        
+        # Interactive elements
+        st.markdown(
+            """
+            <div class="interactive-elements">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("Copy to Clipboard", key="copy_btn"):
+                # Use JavaScript to copy to clipboard (this is just UI, actual copying would require JS)
+                st.success("Content copied to clipboard!")
+        
+        with col2:
+            download_format = st.selectbox("Format:", ["PDF", "DOCX", "TXT"], key="download_format")
+            if st.button("Download", key="download_btn"):
+                st.success(f"Downloaded as {download_format}!")
+        
+        with col3:
+            if st.button("Ask Follow-Up Question", key="followup_btn"):
+                st.session_state.current_step = "follow_up"
+                st.rerun()
+        
+        with col4:
+            # Feedback buttons
+            col4a, col4b = st.columns(2)
+            with col4a:
+                if st.button("👍", key="thumbs_up"):
+                    st.success("Thanks for your feedback!")
+            with col4b:
+                if st.button("👎", key="thumbs_down"):
+                    st.info("Thanks for your feedback!")
+
+# Follow-up question
+elif st.session_state.current_step == "follow_up":
+    with main_container:
+        st.markdown("## Ask a Follow-Up Question")
+        
+        # Show previous output
+        with st.expander("Previous Response", expanded=False):
+            st.markdown(st.session_state.output)
+        
+        # Text input for follow-up question
+        followup_question = st.text_area("Type your follow-up question", height=100)
+        
+        if st.button("Submit Follow-Up", key="submit_followup"):
+            if followup_question.strip():
+                # Add the follow-up to the context
+                st.session_state.context += f"\n\nFollow-up question: {followup_question}"
+                st.session_state.current_step = "processing"
+                st.rerun()
             else:
-                complete_prompt = prompt
-            
-            with st.chat_message("assistant"):
-                message_placeholder = st.empty()
-                response = model.generate_content(
-                    complete_prompt,
-                    stream=True
-                )
-                full_response = ""
-                for chunk in response:
-                    if hasattr(chunk, 'text'):
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
+                st.warning("Please enter a follow-up question.")
+
+# Register the script as a Streamlit app
+if __name__ == "__main__":
+    pass
