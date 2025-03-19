@@ -342,7 +342,7 @@ with st.sidebar:
                 "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
             })
             st.session_state.show_presets = False
-            st.session_state.active_chat = "German States Reference"
+            st.session_state.active_chat = "Duitse Deelstaten Referentie"
             st.rerun()
     
     # Collapsible AI Settings
