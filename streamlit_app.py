@@ -1,6 +1,9 @@
 import streamlit as st 
 import google.generativeai as genai
 import time
+import PyPDF2
+import docx
+import io
 
 # Set page config
 st.set_page_config(
@@ -166,8 +169,32 @@ with st.sidebar:
             st.session_state.show_presets = True
             st.rerun()
     
-    # Custom context section
+    # Custom context section with file upload support
     with st.expander("Context Management", expanded=False):
+        # File uploader for PDF and Word documents
+        uploaded_file = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
+        if uploaded_file is not None:
+            file_text = ""
+            if uploaded_file.name.lower().endswith("pdf"):
+                try:
+                    reader = PyPDF2.PdfReader(uploaded_file)
+                    for page in reader.pages:
+                        file_text += page.extract_text() + "\n"
+                except Exception as e:
+                    st.error(f"Error reading PDF: {str(e)}")
+            elif uploaded_file.name.lower().endswith("docx"):
+                try:
+                    doc = docx.Document(uploaded_file)
+                    file_text = "\n".join([para.text for para in doc.paragraphs])
+                except Exception as e:
+                    st.error(f"Error reading Word document: {str(e)}")
+            if file_text:
+                if st.button("Load File Content into Context"):
+                    st.session_state.context += "\n" + file_text
+                    st.success("File content added to context.")
+                    st.experimental_rerun()
+        
+        # Text area to edit context
         custom_context = st.text_area(
             "Edit context:",
             value=st.session_state.context,
