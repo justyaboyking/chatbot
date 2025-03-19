@@ -242,7 +242,7 @@ with st.sidebar:
             <span class="icon">⭐</span> German States Reference
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Load", key="gem_german_states", help="Load German States Reference", label_visibility="hidden"):
+        if st.button("Load", key="gem_german_states", help="Load German States Reference"):
             st.session_state.context = presets["duits deelstaten"]["content"]
             st.session_state.messages.append({
                 "role": "assistant", 
@@ -257,7 +257,7 @@ with st.sidebar:
             <span class="icon">⭐</span> Dutch Verb Conjugations
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Load", key="gem_dutch_verb", help="Load Dutch Verb Conjugations", label_visibility="hidden"):
+        if st.button("Load", key="gem_dutch_verb", help="Load Dutch Verb Conjugations"):
             # You can customize the context for Dutch verbs here
             dutch_verbs_context = "Help with Dutch verb conjugations for different tenses and forms."
             st.session_state.context = dutch_verbs_context
