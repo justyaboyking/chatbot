@@ -6,13 +6,53 @@ from google.api_core import exceptions
 st.title("💬 Gemini Chatbot")
 st.write(
     "This is a simple chatbot that uses Google's Gemini model to generate responses. "
-    "To use this app, you need to provide a Google AI Studio API key, which you can get from Google AI Studio. "
 )
 
-# Ask user for their Gemini API key via `st.text_input`.
-gemini_api_key = st.text_input("Google AI API Key", type="password", value="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
+# Sidebar for configuration
+with st.sidebar:
+    st.header("Configuration")
+    
+    # API Key input
+    gemini_api_key = st.text_input("Google AI API Key", type="password", value="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
+    
+    # Model selection
+    model_name = st.selectbox(
+        "Select Gemini Model",
+        ["gemini-1.5-flash", "gemini-1.5-pro"],
+        index=0
+    )
+    
+    # Context management
+    st.header("Context Management")
+    
+    # Initialize context in session state if not present
+    if "context" not in st.session_state:
+        st.session_state.context = ""
+    
+    # Text area for additional context
+    st.session_state.context = st.text_area(
+        "Add Background Information/Context",
+        st.session_state.context,
+        height=200,
+        help="This information will be included with every prompt sent to the model."
+    )
+    
+    # File uploader for additional context
+    uploaded_file = st.file_uploader("Or Upload a Text File", type=["txt"])
+    if uploaded_file is not None:
+        file_contents = uploaded_file.read().decode("utf-8")
+        if st.button("Add File Contents to Context"):
+            st.session_state.context += "\n\n" + file_contents
+            st.experimental_rerun()
+    
+    # Clear context button
+    if st.button("Clear Context"):
+        st.session_state.context = ""
+        st.experimental_rerun()
+
+# Main chat interface
 if not gemini_api_key:
-    st.info("Please add your Google AI API key to continue.", icon="🗝️")
+    st.info("Please add your Google AI API key in the sidebar to continue.", icon="🗝️")
 else:
     # Configure the Gemini API
     genai.configure(api_key=gemini_api_key)
@@ -34,21 +74,28 @@ else:
             st.markdown(prompt)
 
         try:
-            # Use only the recommended newer model
-            model_name = "gemini-1.5-flash"
-            st.info(f"Using model: {model_name}")
-            
             # Initialize the model
             model = genai.GenerativeModel(model_name)
+            
+            # Create the complete prompt by combining context and the user's prompt
+            complete_prompt = prompt
+            if st.session_state.context:
+                complete_prompt = f"""
+                Context information:
+                {st.session_state.context}
+                
+                Based on the above context, please respond to this question or request:
+                {prompt}
+                """
             
             # Generate content with streaming
             with st.chat_message("assistant"):
                 response_container = st.empty()
                 full_response = ""
                 
-                # Generate content based on the current prompt only
+                # Generate content with the complete prompt
                 response = model.generate_content(
-                    prompt,
+                    complete_prompt,
                     stream=True
                 )
                 
@@ -58,28 +105,14 @@ else:
                         full_response += chunk.text
                         response_container.markdown(full_response)
                     
-                # Store the response
+                # Store the response (only storing the original prompt, not the context-enhanced one)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
         except Exception as e:
             st.error(f"Error generating response: {str(e)}")
-            
-            # Try alternative approach with a different model if first one fails
-            try:
-                st.info("Trying alternative model: gemini-1.5-pro")
-                model = genai.GenerativeModel("gemini-1.5-pro")
-                
-                with st.chat_message("assistant"):
-                    response_container = st.empty()
-                    
-                    # Generate simple non-streaming response as fallback
-                    response = model.generate_content(prompt)
-                    if hasattr(response, 'text'):
-                        response_container.markdown(response.text)
-                        st.session_state.messages.append({"role": "assistant", "content": response.text})
-                    else:
-                        response_container.markdown("Failed to generate a response.")
-                        
-            except Exception as fallback_error:
-                st.error(f"Alternative model also failed: {str(fallback_error)}")
-                st.info("Please check if your API key has access to Gemini 1.5 models.")
+            st.info("Please check if your API key has access to Gemini 1.5 models.")
+
+    # Add a button to clear the chat history
+    if st.session_state.messages and st.button("Clear Conversation"):
+        st.session_state.messages = []
+        st.experimental_rerun()
