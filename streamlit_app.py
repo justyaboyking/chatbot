@@ -8,26 +8,22 @@ st.write(
     "This is a simple chatbot that uses Google's Gemini model to generate responses. "
 )
 
-# Sidebar for configuration
+# Sidebar for context management only
 with st.sidebar:
-    st.header("Configuration")
+    # Hidden configurations (not shown in UI)
+    gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Hardcoded
+    model_name = "gemini-1.5-flash"  # Hardcoded default model
     
-    # API Key input
-    gemini_api_key = st.text_input("Google AI API Key", type="password", value="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
-    
-    # Model selection
-    model_name = st.selectbox(
-        "Select Gemini Model",
-        ["gemini-1.5-flash", "gemini-1.5-pro"],
-        index=0
-    )
-    
-    # Text area for additional context (no size limit)
+    # Just the context management section
     st.header("Context Management")
+    
+    # Initialize context in session state if not present
+    if "context" not in st.session_state:
+        st.session_state.context = ""
     
     st.text(f"Current context length: {len(st.session_state.context)} characters")
     st.session_state.context = st.text_area(
-        "Add Background Information/Context (No Size Limit)",
+        "Add Background Information/Context",
         st.session_state.context,
         height=400,
         help="This information will be included with every prompt sent to the model."
