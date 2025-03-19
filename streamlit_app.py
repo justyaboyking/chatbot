@@ -19,19 +19,16 @@ st.markdown("""
         color: white;
         background-color: #0e1117;
     }
-
     /* Sidebar styling */
     [data-testid="stSidebar"] {
         background-color: #0e1117;
         border-right: 1px solid #262730;
     }
-    
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3 {
         color: white;
     }
-    
     /* Simple fixed bottom chat input - Claude style */
     [data-testid="stChatInput"] {
         position: fixed;
@@ -43,13 +40,11 @@ st.markdown("""
         border-top: 1px solid #262730;
         z-index: 999;
     }
-    
     /* Container for chat messages */
     [data-testid="stChatMessageContainer"] {
         margin-bottom: 100px;
         padding-bottom: 100px;
     }
-    
     /* Chat messages */
     [data-testid="stChatMessage"] {
         background-color: #262730;
@@ -57,12 +52,10 @@ st.markdown("""
         margin: 0.5rem 0;
         border: none;
     }
-
     /* User vs assistant messages */
     [data-testid="stChatMessage"][data-testid*="user"] {
         background-color: #383b44;
     }
-    
     /* Buttons */
     .stButton > button {
         background-color: #e63946;
@@ -70,7 +63,6 @@ st.markdown("""
         border: none;
         border-radius: 0.25rem;
     }
-    
     /* Preset cards */
     .preset-card {
         background-color: #262730;
@@ -79,7 +71,6 @@ st.markdown("""
         margin-bottom: 1rem;
         cursor: pointer;
     }
-    
     /* Watermark at top left */
     .watermark {
         position: fixed;
@@ -89,13 +80,11 @@ st.markdown("""
         font-size: 12px;
         z-index: 1000;
     }
-    
     /* Fixed height for chat container */
     .main .block-container {
         padding-bottom: 80px;
     }
 </style>
-
 <!-- Watermark -->
 <div class="watermark">
     home work bot - made by zakaria
@@ -105,7 +94,7 @@ st.markdown("""
 # App title
 st.title("Home Work Bot")
 
-# Hardcoded API key
+# Hardcoded API key (ensure this key is secure)
 gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
 
 # Initialize session state variables
@@ -127,12 +116,9 @@ genai.configure(api_key=gemini_api_key)
 
 # Sidebar with settings
 with st.sidebar:
-    # Settings section
     st.header("Settings")
     
-    # Add expandable settings panel
     with st.expander("AI Settings", expanded=False):
-        # Model selection
         st.subheader("AI Model")
         model_options = {
             "Gemini 1.5 Flash": "gemini-1.5-flash",
@@ -146,10 +132,8 @@ with st.sidebar:
             index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
         )
         
-        # Update model in session state
         st.session_state.model_name = model_options[selected_model]
         
-        # Temperature slider
         st.subheader("Response Style")
         temperature = st.slider(
             "Temperature:",
@@ -160,14 +144,12 @@ with st.sidebar:
         )
         st.session_state.temperature = temperature
         
-        # Clear chat button in settings
         st.subheader("Chat Management")
         if st.button("Clear Chat"):
             st.session_state.messages = []
             st.session_state.show_presets = True
             st.rerun()
     
-    # Custom context section with file upload support
     with st.expander("Context Management", expanded=False):
         # File uploader for PDF and Word documents
         uploaded_file = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
@@ -180,7 +162,7 @@ with st.sidebar:
                     for page in reader.pages:
                         file_text += page.extract_text() + "\n"
                 except ModuleNotFoundError:
-                    st.error("PyPDF2 is not installed. Please run 'pip install PyPDF2'.")
+                    st.error("PyPDF2 is not installed. Please include it in your requirements.txt.")
                 except Exception as e:
                     st.error(f"Error reading PDF: {str(e)}")
             elif uploaded_file.name.lower().endswith("docx"):
@@ -189,7 +171,7 @@ with st.sidebar:
                     doc = docx.Document(uploaded_file)
                     file_text = "\n".join([para.text for para in doc.paragraphs])
                 except ModuleNotFoundError:
-                    st.error("python-docx is not installed. Please run 'pip install python-docx'.")
+                    st.error("python-docx is not installed. Please include it in your requirements.txt.")
                 except Exception as e:
                     st.error(f"Error reading Word document: {str(e)}")
             if file_text:
@@ -211,7 +193,6 @@ with st.sidebar:
             if st.button("Save", key="save_context"):
                 st.session_state.context = custom_context
                 st.success("Saved!")
-        
         with col2:
             if st.button("Clear", key="clear_context"):
                 st.session_state["custom_context"] = ""
@@ -312,16 +293,12 @@ Veel succes!"""
 # Main content area
 main_container = st.container()
 
-# First show presets if no conversation started
 if st.session_state.show_presets and not st.session_state.messages:
     with main_container:
         st.subheader("Kies een preset om te beginnen")
-        
-        # Grid layout for presets
         cols = st.columns(3)
         col_idx = 0
         
-        # Display default presets
         for preset_name, preset_data in presets.items():
             with cols[col_idx]:
                 st.markdown(f"""
@@ -330,30 +307,20 @@ if st.session_state.show_presets and not st.session_state.messages:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Hidden button triggered by the card
                 if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
-                    # Set context
                     st.session_state.context = preset_data["content"]
-                    
-                    # Add first AI message
                     st.session_state.messages.append({
                         "role": "assistant", 
                         "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
                     })
-                    
-                    # Hide presets once selected
                     st.session_state.show_presets = False
                     st.rerun()
-            
             col_idx = (col_idx + 1) % 3
         
-        # Display user presets if any
         if st.session_state.user_presets:
             st.subheader("Je eigen presets:")
-            
             user_cols = st.columns(3)
             col_idx = 0
-            
             for preset_name, preset_content in st.session_state.user_presets.items():
                 with user_cols[col_idx]:
                     st.markdown(f"""
@@ -363,48 +330,32 @@ if st.session_state.show_presets and not st.session_state.messages:
                     """, unsafe_allow_html=True)
                     
                     if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
-                        # Set context
                         st.session_state.context = preset_content
-                        
-                        # Add first AI message
                         st.session_state.messages.append({
                             "role": "assistant", 
                             "content": "Wat is je vraag?"
                         })
-                        
-                        # Hide presets once selected
                         st.session_state.show_presets = False
                         st.rerun()
-                
                 col_idx = (col_idx + 1) % 3
 
-# Always display chat messages (whether empty or not)
 with main_container:
-    # Display existing messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Always show the chat input at the bottom (Claude style)
     if prompt := st.chat_input("Typ je vraag..."):
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Hide presets once user starts typing
         st.session_state.show_presets = False
-        
-        # Display the user message
         with st.chat_message("user"):
             st.markdown(prompt)
         
         try:
-            # Process with Gemini
             model = genai.GenerativeModel(
                 st.session_state.model_name,
                 generation_config={"temperature": st.session_state.temperature}
             )
             
-            # Create appropriate prompt based on context
             if st.session_state.context:
                 complete_prompt = f"""
                 Context informatie:
@@ -435,25 +386,17 @@ with main_container:
             else:
                 complete_prompt = prompt
             
-            # Generate response
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
-                
-                # Generate content
                 response = model.generate_content(
                     complete_prompt,
                     stream=True
                 )
-                
-                # Display streaming response
                 full_response = ""
                 for chunk in response:
                     if hasattr(chunk, 'text'):
                         full_response += chunk.text
                         message_placeholder.markdown(full_response)
-                
-                # Store response
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
-                
         except Exception as e:
             st.error(f"Error: {str(e)}")
