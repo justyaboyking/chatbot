@@ -10,56 +10,96 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS with simplified animations to avoid compatibility issues
+# Custom CSS with black backgrounds for text
 st.markdown("""
 <style>
-    /* Color scheme */
+    /* Dark theme with black backgrounds for text */
     body {
-        color: #1d3557;
-        background-color: #f1faee;
+        color: white;
+        background-color: #121212;
+    }
+    
+    .main {
+        background-color: #121212;
     }
     
     /* Sidebar styling */
-    .css-1d391kg {
-        background-color: #1d3557;
+    [data-testid="stSidebar"] {
+        background-color: #000000;
     }
     
-    /* Sidebar text */
-    .css-1d391kg .stMarkdown p, .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3 {
+    /* All text containers get black backgrounds */
+    .stTextInput, .stTextArea > div > div, p, h1, h2, h3, h4, h5, h6, 
+    .stMarkdown, .element-container, [data-testid="stChatMessageContent"] {
+        background-color: #000000 !important;
         color: white !important;
+    }
+    
+    /* Chat message styling */
+    [data-testid="stChatMessage"] {
+        background-color: #000000;
+        border: 1px solid #333333;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    
+    /* Chat message from assistant vs user */
+    [data-testid="stChatMessage"][data-testid*="assistant"] {
+        border-left: 3px solid #e63946;
+    }
+    
+    [data-testid="stChatMessage"][data-testid*="user"] {
+        border-left: 3px solid #4ecdc4;
     }
     
     /* Button styling */
     .stButton > button {
         background-color: #e63946;
         color: white;
-        border-radius: 8px;
         border: none;
+        border-radius: 8px;
         padding: 0.5rem 1rem;
-        font-weight: 500;
     }
     
     .stButton > button:hover {
         background-color: #c1121f;
     }
     
+    /* Input fields */
+    input, textarea {
+        background-color: #1f1f1f !important;
+        color: white !important;
+        border: 1px solid #333333 !important;
+    }
+    
+    /* Chat input */
+    [data-testid="stChatInput"] {
+        background-color: #1f1f1f;
+        border: 1px solid #333333;
+        color: white;
+    }
+    
     /* Preset cards */
     .preset-card {
-        background-color: white;
+        background-color: #1a1a1a;
+        color: white;
         border-radius: 8px;
         padding: 12px;
         margin-bottom: 10px;
         border-left: 4px solid #e63946;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
     
-    /* Chat messages */
-    .stChatMessage {
-        background-color: white;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    /* Success messages */
+    .stSuccess {
+        background-color: #0f3d27;
+        color: white;
+    }
+    
+    /* Error messages */
+    .stError {
+        background-color: #3d0f0f;
+        color: white;
     }
     
     /* Footer */
@@ -68,21 +108,28 @@ st.markdown("""
         bottom: 0;
         left: 0;
         width: 100%;
-        background-color: #1d3557;
+        background-color: #000000;
         color: white;
         text-align: center;
         padding: 10px;
         font-size: 14px;
+        border-top: 1px solid #333333;
     }
     
     /* Warning box */
     .warning-box {
-        background-color: rgba(230, 57, 70, 0.1);
+        background-color: #1a1a1a;
         border-left: 3px solid #e63946;
         padding: 10px;
         border-radius: 5px;
         margin: 15px 0;
         font-size: 14px;
+        color: white;
+    }
+    
+    /* Spinner */
+    .stSpinner > div {
+        border-color: #e63946 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -105,7 +152,7 @@ if "context" not in st.session_state:
 if "user_presets" not in st.session_state:
     st.session_state.user_presets = {}
 
-# Sidebar with simplified design
+# Sidebar with dark theme
 with st.sidebar:
     st.header("Presets")
     
@@ -201,10 +248,10 @@ Veel succes!""",
         }
     }
     
-    # Simplified preset selection - basic buttons with descriptions
+    # Simplified preset selection with black backgrounds
     st.subheader("Kies een preset:")
     for preset_name, preset_data in presets.items():
-        # Display a simplified description
+        # Display a card with black background
         st.markdown(f"""
         <div class="preset-card">
             <strong>{preset_name}</strong><br>
@@ -280,14 +327,14 @@ Veel succes!""",
                 st.session_state.user_presets[new_preset_name] = custom_context
                 st.success(f"Preset '{new_preset_name}' opgeslagen!")
     
-    # Dutch reminder at bottom with styled box
+    # Dutch reminder with black background
     st.markdown("""
     <div class="warning-box">
         <strong>Let op:</strong> Gesprekken worden niet opgeslagen en worden verwijderd wanneer je de pagina verlaat.
     </div>
     """, unsafe_allow_html=True)
 
-# Main chat interface with simplified layout
+# Main chat interface with black background
 chat_container = st.container()
 
 # Clear chat button
@@ -303,18 +350,18 @@ with col2:
 with chat_container:
     if not st.session_state.messages:
         st.markdown("""
-        <div style="text-align: center; padding: 50px; color: #666;">
+        <div style="text-align: center; padding: 50px; color: #e0e0e0; background-color: #000000; border-radius: 10px;">
             <h3>Welkom bij Home Work Bot</h3>
             <p>Kies een preset of stel een vraag om te beginnen.</p>
         </div>
         """, unsafe_allow_html=True)
     
-    # Display chat messages
+    # Display chat messages with black backgrounds
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# Chat input
+# Chat input with black background
 if prompt := st.chat_input("Stel een vraag..."):
     # Add user message to chat
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -336,13 +383,13 @@ if prompt := st.chat_input("Stel een vraag..."):
             {prompt}
             """
         
-        # Generate content with simplified streaming
+        # Generate content with black background for messages
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
             
-            # Show typing indicator
-            message_placeholder.markdown("Bezig met nadenken...")
+            # Show typing indicator with black background
+            message_placeholder.markdown("<span style='color: #999999;'>Bezig met nadenken...</span>", unsafe_allow_html=True)
             
             # Generate content
             response = model.generate_content(
@@ -363,7 +410,7 @@ if prompt := st.chat_input("Stel een vraag..."):
         error_msg = str(e)
         st.error(f"Fout bij het genereren van een antwoord: {error_msg}")
 
-# Simplified footer
+# Black background footer
 st.markdown("""
 <div class="footer">
     Home Work Bot — Gemaakt door een professioneel team © 2025
