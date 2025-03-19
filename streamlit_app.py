@@ -14,16 +14,17 @@ st.set_page_config(
 # Enhanced CSS with modern UI elements
 st.markdown("""
 <style>
-    /* Dark theme base */
+    /* Dark theme base with cleaner design */
     body {
         color: white;
         background-color: #0e1117;
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Sidebar styling - modern look */
+    /* Sidebar styling - cleaner look */
     [data-testid="stSidebar"] {
         background-color: #1a1c24;
-        border-right: 1px solid #2a2d36;
+        border-right: 1px solid rgba(42, 45, 54, 0.5);
         padding-top: 0;
     }
     
@@ -33,6 +34,7 @@ st.markdown("""
     [data-testid="stSidebar"] h3 {
         color: white;
         padding: 0.5rem 0;
+        font-weight: 500;
     }
     
     /* New chat button */
@@ -48,10 +50,13 @@ st.markdown("""
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
     .new-chat-btn:hover {
         background-color: #505666;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
     }
     
     /* Chat history items */
@@ -76,7 +81,7 @@ st.markdown("""
     /* Sidebar sections */
     .sidebar-section {
         margin: 1.5rem 0;
-        border-top: 1px solid #2a2d36;
+        border-top: 1px solid rgba(42, 45, 54, 0.5);
         padding-top: 1rem;
     }
     
@@ -87,12 +92,14 @@ st.markdown("""
         left: 20%; /* Match sidebar width */
         right: 0;
         height: 60px;
-        background-color: #0e1117;
-        border-bottom: 1px solid #262730;
+        background-color: rgba(14, 17, 23, 0.95);
+        backdrop-filter: blur(5px);
+        border-bottom: 1px solid rgba(38, 39, 48, 0.5);
         display: flex;
         align-items: center;
         padding: 0 2rem;
         z-index: 99;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
     
     /* Model selector in top bar */
@@ -101,6 +108,7 @@ st.markdown("""
         border-radius: 0.5rem;
         padding: 0.5rem 1rem;
         font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     /* Fixed chat input at bottom */
@@ -109,10 +117,12 @@ st.markdown("""
         bottom: 0;
         left: 20%;
         right: 0;
-        background-color: #0e1117;
+        background-color: rgba(14, 17, 23, 0.95);
+        backdrop-filter: blur(5px);
         padding: 1rem 2rem;
-        border-top: 1px solid #262730;
+        border-top: 1px solid rgba(38, 39, 48, 0.5);
         z-index: 99;
+        box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.1);
     }
     
     /* Chat container with proper spacing */
@@ -150,20 +160,22 @@ st.markdown("""
         padding: 0.5rem 0;
     }
     
-    /* Preset cards */
-    .preset-card {
-        background-color: #262730;
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid transparent;
+    /* Hide streamlit default elements */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Clean up button appearances */
+    button[data-testid="baseButton-secondary"] {
+        background-color: #404756 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 0.25rem !important;
     }
     
-    .preset-card:hover {
-        background-color: #2a2d36;
-        border-color: #3a3d46;
+    /* Remove button label if not needed */
+    button[data-testid="baseButton-secondary"] p {
+        display: none;
     }
     
     /* Watermark */
@@ -171,7 +183,7 @@ st.markdown("""
         position: fixed;
         top: 10px;
         left: 10px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 0.3);
         font-size: 12px;
         z-index: 1000;
     }
@@ -325,7 +337,7 @@ with st.sidebar:
     
     # Collapsible Gems Section
     with st.expander("✨ Bewaarde Items", expanded=False):
-        st.markdown("### Opgeslagen Antwoorden")
+        st.markdown("### Huiswerk")
         
         # Make gem items clickable and functional
         st.markdown("""
