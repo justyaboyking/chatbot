@@ -230,37 +230,44 @@ with st.sidebar:
         st.session_state.active_chat = None
         st.rerun()
     
-    # Recent Chats
-    st.markdown("### <span class='icon'>💬</span> Recent Chats", unsafe_allow_html=True)
-    for chat in st.session_state.chat_history:
-        st.markdown(f"""
-        <div class="chat-history-item" onclick="document.getElementById('chat_{chat['title'].replace(' ', '_')}').click();">
-            <span class="icon">📄</span> {chat['title']}
-            <div style="font-size: 0.8em; color: #aaa; margin-top: 0.2rem;">{chat['timestamp']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Load", key=f"chat_{chat['title'].replace(' ', '_')}", help=f"Load {chat['title']}"):
-            st.session_state.active_chat = chat['title']
-            st.session_state.show_presets = False
-            # Here you would load the actual chat messages
-            # For now, we'll just show a sample message
-            if len(st.session_state.messages) == 0:
-                st.session_state.messages = [
-                    {"role": "assistant", "content": f"Welcome back to your {chat['title']} chat! How can I help you today?"}
-                ]
-            st.rerun()
+    # Remove the Recent Chats section completely
     
     # Collapsible Gems Section
     with st.expander("✨ Gems", expanded=False):
         st.markdown("### Saved Responses")
+        
+        # Make gem items clickable and functional
         st.markdown("""
-        <div class="chat-history-item">
+        <div class="chat-history-item" onclick="document.getElementById('gem_german_states').click();">
             <span class="icon">⭐</span> German States Reference
         </div>
-        <div class="chat-history-item">
+        """, unsafe_allow_html=True)
+        if st.button("Load", key="gem_german_states", help="Load German States Reference", label_visibility="hidden"):
+            st.session_state.context = presets["duits deelstaten"]["content"]
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+            })
+            st.session_state.show_presets = False
+            st.session_state.active_chat = "German States Reference"
+            st.rerun()
+            
+        st.markdown("""
+        <div class="chat-history-item" onclick="document.getElementById('gem_dutch_verb').click();">
             <span class="icon">⭐</span> Dutch Verb Conjugations
         </div>
         """, unsafe_allow_html=True)
+        if st.button("Load", key="gem_dutch_verb", help="Load Dutch Verb Conjugations", label_visibility="hidden"):
+            # You can customize the context for Dutch verbs here
+            dutch_verbs_context = "Help with Dutch verb conjugations for different tenses and forms."
+            st.session_state.context = dutch_verbs_context
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": "Which Dutch verb would you like me to conjugate?"
+            })
+            st.session_state.show_presets = False
+            st.session_state.active_chat = "Dutch Verb Conjugations"
+            st.rerun()
     
     # Collapsible AI Settings
     with st.expander("🤖 AI Settings", expanded=False):
