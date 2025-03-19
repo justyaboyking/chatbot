@@ -10,235 +10,73 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS with background animations and cleaner design
+# Simplified CSS with fixed bottom chat input, similar to Claude's interface
 st.markdown("""
 <style>
-    /* Animated background */
-    @keyframes gradientAnimation {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    @keyframes slideInRight {
-        from { transform: translateX(20px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 0.8; }
-        50% { opacity: 1; }
-        100% { opacity: 0.8; }
-    }
-    
-    /* Main background with animation */
-    .main {
-        background: linear-gradient(-45deg, #000000, #0a0a0a, #121212, #181818);
-        background-size: 400% 400%;
-        animation: gradientAnimation 15s ease infinite;
-    }
-    
-    /* Star field animation */
-    .stars {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: -1;
-    }
-    
-    .star {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background-color: white;
-        border-radius: 50%;
-        opacity: 0.3;
-        animation: pulse 3s infinite;
-    }
-    
-    /* Generate 50 random stars */
-    ${Array.from({length: 50}, (_, i) => {
-        const top = Math.random() * 100;
-        const left = Math.random() * 100;
-        const animationDelay = Math.random() * 5;
-        const size = Math.random() * 2 + 1;
-        
-        return `.star:nth-child(${i+1}) {
-            top: ${top}%;
-            left: ${left}%;
-            width: ${size}px;
-            height: ${size}px;
-            animation-delay: ${animationDelay}s;
-        }`;
-    }).join('\n')}
-    
-    /* Cleaner text elements with black backgrounds */
+    /* Dark background */
     body {
         color: white;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+        background-color: #0e1117;
     }
-    
-    /* Sidebar styling - cleaner and more minimal */
+
+    /* Sidebar styling */
     [data-testid="stSidebar"] {
-        background-color: #000000;
-        border-right: 1px solid #222;
+        background-color: #0e1117;
+        border-right: 1px solid #262730;
     }
     
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3 {
         color: white;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        margin-top: 2rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #333;
-        animation: fadeIn 0.8s ease-out;
     }
     
-    /* Clean, minimal text containers with black backgrounds */
-    .stTextInput, .stTextArea > div > div, p, h1, h2, h3, h4, h5, h6, 
-    .stMarkdown, .element-container, [data-testid="stChatMessageContent"] {
-        background-color: #000000 !important;
-        color: white !important;
+    /* Simple fixed bottom chat input - Claude style */
+    [data-testid="stChatInput"] {
+        position: fixed;
+        bottom: 0;
+        left: 20%;
+        right: 5%;
+        background-color: #0e1117;
+        padding: 1rem 0;
+        border-top: 1px solid #262730;
+        z-index: 999;
     }
     
-    /* Modern, minimal chat messages */
+    /* Container for chat messages */
+    [data-testid="stChatMessageContainer"] {
+        margin-bottom: 100px;
+        padding-bottom: 100px;
+    }
+    
+    /* Chat messages */
     [data-testid="stChatMessage"] {
-        background-color: #0a0a0a;
+        background-color: #262730;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
         border: none;
-        border-radius: 12px;
-        margin: 16px 0;
-        padding: 16px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        animation: fadeIn 0.5s ease-out;
     }
-    
-    /* Different styling for assistant vs user messages */
-    [data-testid="stChatMessage"][data-testid*="assistant"] {
-        border-left: 3px solid #e63946;
-    }
-    
+
+    /* User vs assistant messages */
     [data-testid="stChatMessage"][data-testid*="user"] {
-        border-left: 3px solid #4ecdc4;
-        background-color: #0e0e0e;
+        background-color: #383b44;
     }
     
-    /* Clean, minimal buttons */
+    /* Buttons */
     .stButton > button {
         background-color: #e63946;
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1.2rem;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 5px rgba(230, 57, 70, 0.3);
+        border-radius: 0.25rem;
     }
     
-    .stButton > button:hover {
-        background-color: #c1121f;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(230, 57, 70, 0.4);
-    }
-    
-    /* Clean input fields */
-    input, textarea {
-        background-color: #0a0a0a !important;
-        color: white !important;
-        border: 1px solid #333 !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-    }
-    
-    /* Position chat input at bottom of viewport */
-    .stChatInput {
-        position: fixed;
-        bottom: 0;
-        left: 400px; /* Account for sidebar width */
-        right: 0;
-        z-index: 1000;
-        padding: 15px;
-        background-color: #0f0f0f;
-        border-top: 1px solid #333;
-        margin: 0;
-    }
-    
-    /* Moderate padding for chat container */
-    [data-testid="stChatMessageContainer"] {
-        padding-bottom: 80px !important;
-        margin-bottom: 0 !important;
-    }
-    
-    /* Adjust main container to keep content in viewport */
-    .main .block-container {
-        padding-bottom: 70px;
-        max-width: 1000px;
-    }
-    
-    /* Space text elements vertically without excessive spacing */
-    [data-testid="stChatMessageContent"] p {
-        margin-bottom: 0.5em !important;
-        line-height: 1.6 !important;
-    }
-    
-    /* Make chat container auto-scroll to bottom */
-    [data-testid="stChatMessageContainer"] {
-        height: calc(100vh - 180px);
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column-reverse;
-    }
-    
-    /* Footer adjustment */
-    .footer {
-        display: none;
-    }
-    
-    /* Clean preset cards with subtle animation */
+    /* Preset cards */
     .preset-card {
-        background-color: #0a0a0a;
-        color: white;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 16px;
-        border-left: 4px solid #e63946;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-        animation: slideInRight 0.5s ease-out;
+        background-color: #262730;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
         cursor: pointer;
-    }
-    
-    .preset-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-        border-left-color: #4ecdc4;
-    }
-    
-    /* Clean success messages */
-    .stSuccess {
-        background-color: rgba(15, 61, 39, 0.8) !important;
-        color: white !important;
-        border-radius: 8px !important;
-        backdrop-filter: blur(5px);
-    }
-    
-    /* Clean error messages */
-    .stError {
-        background-color: rgba(61, 15, 15, 0.8) !important;
-        color: white !important;
-        border-radius: 8px !important;
-        backdrop-filter: blur(5px);
     }
     
     /* Watermark at top left */
@@ -251,97 +89,11 @@ st.markdown("""
         z-index: 1000;
     }
     
-    /* Cleaner warning box */
-    .warning-box {
-        background-color: rgba(10, 10, 10, 0.7);
-        border-left: 3px solid #e63946;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 16px 0;
-        font-size: 14px;
-        color: white;
-        animation: fadeIn 1s ease-out;
-        backdrop-filter: blur(5px);
-    }
-    
-    /* App title */
-    .app-title {
-        display: flex;
-        align-items: center;
-        margin-bottom: 2rem;
-        animation: fadeIn 1s ease-out;
-    }
-    
-    .app-icon {
-        font-size: 2.5rem;
-        color: #e63946;
-        margin-right: 1rem;
-    }
-    
-    .app-name {
-        margin: 0;
-        padding: 0;
-        font-size: 2.2rem;
-        font-weight: 600;
-        background: linear-gradient(45deg, #e63946, #4ecdc4);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 1px;
-    }
-    
-    /* Welcome screen */
-    .welcome-screen {
-        text-align: center;
-        padding: 30px;
-        color: #e0e0e0;
-        background-color: rgba(0, 0, 0, 0.5);
-        border-radius: 16px;
-        margin: 2rem 0;
-        animation: fadeIn 1.5s ease-out;
-        backdrop-filter: blur(10px);
-        border: 1px solid #222;
-    }
-    
-    /* Settings panel */
-    .settings-panel {
-        background-color: #0a0a0a;
-        border-radius: 12px;
-        padding: 16px;
-        margin: 16px 0;
-        border-left: 4px solid #4ecdc4;
-        animation: fadeIn 0.8s ease-out;
-    }
-    
-    /* Cleaner scrollbars */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: #111;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #444;
-    }
-    
-    /* Loading spinner */
-    .stSpinner > div {
-        border-color: #e63946 transparent transparent transparent !important;
+    /* Fixed height for chat container */
+    .main .block-container {
+        padding-bottom: 80px;
     }
 </style>
-
-<!-- Background stars effect -->
-<div class="stars">
-    ${Array.from({length: 50}, () => '<div class="star"></div>').join('')}
-</div>
 
 <!-- Watermark -->
 <div class="watermark">
@@ -349,13 +101,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# App title with custom styling
-st.markdown("""
-<div class="app-title">
-    <div class="app-icon">📚</div>
-    <h1 class="app-name">Home Work Bot</h1>
-</div>
-""", unsafe_allow_html=True)
+# App title
+st.title("Home Work Bot")
 
 # Hardcoded API key
 gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
@@ -371,6 +118,8 @@ if "model_name" not in st.session_state:
     st.session_state.model_name = "gemini-1.5-flash"
 if "temperature" not in st.session_state:
     st.session_state.temperature = 0.7
+if "show_presets" not in st.session_state:
+    st.session_state.show_presets = True
 
 # Configure Gemini API
 genai.configure(api_key=gemini_api_key)
@@ -402,7 +151,7 @@ with st.sidebar:
         # Temperature slider
         st.subheader("Response Style")
         temperature = st.slider(
-            "Temperature (lower = more focused, higher = more creative):",
+            "Temperature:",
             min_value=0.0,
             max_value=1.0,
             value=st.session_state.temperature,
@@ -412,23 +161,13 @@ with st.sidebar:
         
         # Clear chat button in settings
         st.subheader("Chat Management")
-        if st.button("Clear Chat History"):
-            with st.spinner("Clearing chat..."):
-                time.sleep(0.3)
-                st.session_state.messages = []
-                st.rerun()
+        if st.button("Clear Chat"):
+            st.session_state.messages = []
+            st.session_state.show_presets = True
+            st.rerun()
     
     # Custom context section
-    st.header("Context Management")
-    if st.button("Show/Hide Context Editor"):
-        if "show_custom_context" not in st.session_state:
-            st.session_state.show_custom_context = True
-        else:
-            st.session_state.show_custom_context = not st.session_state.show_custom_context
-        st.rerun()
-    
-    # Show custom context section if toggled
-    if "show_custom_context" in st.session_state and st.session_state.show_custom_context:
+    with st.expander("Context Management", expanded=False):
         custom_context = st.text_area(
             "Edit context:",
             value=st.session_state.context,
@@ -439,33 +178,14 @@ with st.sidebar:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Save", key="save_context"):
-                with st.spinner("Saving..."):
-                    time.sleep(0.3)
-                    st.session_state.context = custom_context
-                    st.success("Saved!")
+                st.session_state.context = custom_context
+                st.success("Saved!")
         
         with col2:
             if st.button("Clear", key="clear_context"):
-                with st.spinner("Clearing..."):
-                    time.sleep(0.3)
-                    st.session_state["custom_context"] = ""
-                    st.session_state.context = ""
-                    st.rerun()
-        
-        # Save as preset option
-        new_preset_name = st.text_input("Save as preset (name):")
-        if st.button("Create Preset") and new_preset_name:
-            with st.spinner("Creating preset..."):
-                time.sleep(0.3)
-                st.session_state.user_presets[new_preset_name] = custom_context
-                st.success(f"Preset '{new_preset_name}' created!")
-    
-    # Privacy notice
-    st.markdown("""
-    <div class="warning-box">
-        <strong>Privacy:</strong> Conversations are not stored and will be deleted when you leave the page.
-    </div>
-    """, unsafe_allow_html=True)
+                st.session_state["custom_context"] = ""
+                st.session_state.context = ""
+                st.rerun()
 
 # Define presets
 presets = {
@@ -554,160 +274,155 @@ Beoordelingscriteria:
 Kwaliteit van de informatie: /20
 Structuur en uiterlijk van de PowerPoint: /10
 Hoe je presenteert en hoe goed men je begrijpt: /10
-Veel succes!""",
-        "description": ""
+Veel succes!"""
     }
 }
 
-# Main chat interface with preset-focused design
-chat_container = st.container()
+# Main content area
+main_container = st.container()
 
-# Display preset options if no messages, or regular chat UI if conversation in progress
-with chat_container:
-    if not st.session_state.messages:
-        # Welcome screen with preset selection options
-        st.markdown("""
-        <div class="welcome-screen">
-            <h3>Kies een preset om te beginnen</h3>
-        </div>
-        """, unsafe_allow_html=True)
+# First show presets if no conversation started
+if st.session_state.show_presets and not st.session_state.messages:
+    with main_container:
+        st.subheader("Kies een preset om te beginnen")
         
-        # Main preset grid - replaces the chat input initially
-        preset_cols = st.columns(3)
-        
-        # Display all available presets in a grid
+        # Grid layout for presets
+        cols = st.columns(3)
         col_idx = 0
+        
+        # Display default presets
         for preset_name, preset_data in presets.items():
-            with preset_cols[col_idx]:
-                # Clickable preset card
+            with cols[col_idx]:
                 st.markdown(f"""
-                <div class="preset-card" id="{preset_name.replace(' ', '_')}_card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
+                <div class="preset-card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
                     <strong>{preset_name}</strong>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Hidden button that gets triggered by the card click
-                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
-                    with st.spinner("Loading..."):
-                        time.sleep(0.5)
-                        # Set the context
-                        st.session_state.context = preset_data["content"]
-                        
-                        # Add first AI message asking for the state/region
-                        st.session_state.messages.append({"role": "assistant", "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"})
-                        
-                        st.rerun()
+                # Hidden button triggered by the card
+                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                    # Set context
+                    st.session_state.context = preset_data["content"]
+                    
+                    # Add first AI message
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+                    })
+                    
+                    # Hide presets once selected
+                    st.session_state.show_presets = False
+                    st.rerun()
             
-            # Update column index for next preset
             col_idx = (col_idx + 1) % 3
         
-        # Show user presets if any
+        # Display user presets if any
         if st.session_state.user_presets:
             st.subheader("Je eigen presets:")
             
-            # Create new row of columns for user presets
-            user_preset_cols = st.columns(3)
-            
-            # Display user presets
+            user_cols = st.columns(3)
             col_idx = 0
+            
             for preset_name, preset_content in st.session_state.user_presets.items():
-                with user_preset_cols[col_idx]:
-                    # Clickable user preset card
+                with user_cols[col_idx]:
                     st.markdown(f"""
-                    <div class="preset-card" id="user_{preset_name.replace(' ', '_')}_card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
+                    <div class="preset-card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
                         <strong>{preset_name}</strong>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Hidden button for the card
-                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
-                        with st.spinner("Loading..."):
-                            time.sleep(0.5)
-                            # Set the context
-                            st.session_state.context = preset_content
-                            
-                            # Start the conversation
-                            st.session_state.messages.append({"role": "assistant", "content": "Wat is je vraag?"})
-                            
-                            st.rerun()
+                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                        # Set context
+                        st.session_state.context = preset_content
+                        
+                        # Add first AI message
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": "Wat is je vraag?"
+                        })
+                        
+                        # Hide presets once selected
+                        st.session_state.show_presets = False
+                        st.rerun()
                 
-                # Update column index for next preset
                 col_idx = (col_idx + 1) % 3
-    else:
-        # Regular chat interface when conversation has started
-        # Display chat messages with styling
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
 
-        # Add minimal spacer to ensure content doesn't get hidden behind fixed chat input
-        st.markdown("<div style='height: 70px'></div>", unsafe_allow_html=True)
+# Always display chat messages (whether empty or not)
+with main_container:
+    # Display existing messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Always show the chat input at the bottom (Claude style)
+    if prompt := st.chat_input("Typ je vraag..."):
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Hide presets once user starts typing
+        st.session_state.show_presets = False
+        
+        # Display the user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        try:
+            # Process with Gemini
+            model = genai.GenerativeModel(
+                st.session_state.model_name,
+                generation_config={"temperature": st.session_state.temperature}
+            )
             
-        # Chat input only appears after selecting a preset
-        if prompt := st.chat_input("Typ je vraag..."):
-            # Add user message to chat
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            try:
-                # Initialize the model with selected settings
-                model = genai.GenerativeModel(
-                    st.session_state.model_name,
-                    generation_config={"temperature": st.session_state.temperature}
+            # Create appropriate prompt based on context
+            if st.session_state.context:
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
+                
+                1. Gebruik precies de secties zoals aangegeven in de context
+                2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
+                3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
+                4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
+                5. Zorg dat elke sectie apart en duidelijk leesbaar is
+                
+                Format de tekst zo:
+                
+                Algemene Informatie:
+                
+                Naam: [naam]
+                
+                Hoofdstad: [hoofdstad]
+                
+                Fläche: [oppervlakte]
+                
+                Einwohnerzahl: [inwoners]
+                
+                Enzovoort voor alle secties uit de context.
+                """
+            else:
+                complete_prompt = prompt
+            
+            # Generate response
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                
+                # Generate content
+                response = model.generate_content(
+                    complete_prompt,
+                    stream=True
                 )
                 
-                # Create the complete prompt including context
-                complete_prompt = prompt
-                if st.session_state.context:
-                    complete_prompt = f"""
-                    Context informatie:
-                    {st.session_state.context}
-                    
-                    Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
-                    
-                    1. Gebruik precies de secties zoals aangegeven in de context
-                    2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
-                    3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
-                    4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
-                    5. Zorg dat elke sectie apart en duidelijk leesbaar is
-                    
-                    Format de tekst zo:
-                    
-                    Algemene Informatie:
-                    
-                    Naam: [naam]
-                    
-                    Hoofdstad: [hoofdstad]
-                    
-                    Fläche: [oppervlakte]
-                    
-                    Einwohnerzahl: [inwoners]
-                    
-                    Enzovoort voor alle secties uit de context.
-                    """
+                # Display streaming response
+                full_response = ""
+                for chunk in response:
+                    if hasattr(chunk, 'text'):
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response)
                 
-                # Generate content with streaming
-                with st.chat_message("assistant"):
-                    message_placeholder = st.empty()
-                    full_response = ""
-                    
-                    # Generate content
-                    response = model.generate_content(
-                        complete_prompt,
-                        stream=True
-                    )
-                    
-                    # Stream the response
-                    for chunk in response:
-                        if hasattr(chunk, 'text'):
-                            full_response += chunk.text
-                            message_placeholder.markdown(full_response)
-                            
-                    # Store the response
-                    st.session_state.messages.append({"role": "assistant", "content": full_response})
-                    
-            except Exception as e:
-                error_msg = str(e)
-                st.error(f"Fout: {error_msg}")
-                st.info("Probeer een ander AI model in de instellingen.")
+                # Store response
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+                
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
