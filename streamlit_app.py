@@ -318,7 +318,7 @@ with st.sidebar:
     
     # Collapsible Gems Section
     with st.expander("✨ Huiswerk", expanded=False):
-        st.markdown("### Huiswerk")
+        st.markdown("### Duitse deelstaat")
         if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
             # Reset the context and messages to start a fresh chat
             st.session_state.messages = []
