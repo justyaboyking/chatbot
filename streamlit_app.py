@@ -20,7 +20,7 @@ nvidia_api_key = st.sidebar.text_input(
 
 model_name = st.sidebar.text_input(
     "Model Name", 
-    value="llama-3.3-nemotron-super-49b-v1"
+    value="NVIDIABuild-Autogen-30"
 )
 
 temperature = st.sidebar.slider(
