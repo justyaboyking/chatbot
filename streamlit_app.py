@@ -37,28 +37,6 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* New chat button */
-    .new-chat-btn {
-        background-color: #404756;
-        color: white;
-        border-radius: 0.5rem;
-        padding: 0.75rem 1rem;
-        margin: 0.5rem 0 1.5rem 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    .new-chat-btn:hover {
-        background-color: #505666;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
-    }
-    
     /* Chat history items */
     .chat-history-item {
         background-color: transparent;
@@ -85,33 +63,7 @@ st.markdown("""
         padding-top: 1rem;
     }
     
-    /* Top bar */
-    .topbar {
-        position: fixed;
-        top: 0;
-        left: 20%; /* Match sidebar width */
-        right: 0;
-        height: 60px;
-        background-color: rgba(14, 17, 23, 0.95);
-        backdrop-filter: blur(5px);
-        border-bottom: 1px solid rgba(38, 39, 48, 0.5);
-        display: flex;
-        align-items: center;
-        padding: 0 2rem;
-        z-index: 99;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Model selector in top bar */
-    .model-selector {
-        background-color: #1a1c24;
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Fixed chat input at bottom */
+    /* Fixed chat input at bottom - removing top border line */
     [data-testid="stChatInput"] {
         position: fixed;
         bottom: 0;
@@ -120,14 +72,14 @@ st.markdown("""
         background-color: rgba(14, 17, 23, 0.95);
         backdrop-filter: blur(5px);
         padding: 1rem 2rem;
-        border-top: 1px solid rgba(38, 39, 48, 0.5);
+        border-top: none;
         z-index: 99;
-        box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: none;
     }
     
-    /* Chat container with proper spacing */
+    /* Chat container with proper spacing - adjusted for no topbar */
     .chat-container {
-        margin-top: 70px; /* Space for topbar */
+        margin-top: 20px; /* Reduced space since no topbar */
         margin-bottom: 80px; /* Space for input box */
         padding: 1rem 2rem;
     }
@@ -140,11 +92,32 @@ st.markdown("""
         padding: 1rem;
         border: none;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: relative; /* For positioning copy button */
     }
     
     /* User vs assistant messages */
     [data-testid="stChatMessage"][data-testid*="user"] {
         background-color: #383b44;
+    }
+    
+    /* Copy button for messages */
+    .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(60, 64, 78, 0.7);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    [data-testid="stChatMessage"]:hover .copy-btn {
+        opacity: 1;
     }
     
     /* Icons */
@@ -173,11 +146,6 @@ st.markdown("""
         border-radius: 0.25rem !important;
     }
     
-    /* Remove button label if not needed */
-    button[data-testid="baseButton-secondary"] p {
-        display: none;
-    }
-    
     /* Watermark */
     .watermark {
         position: fixed;
@@ -189,18 +157,28 @@ st.markdown("""
     }
 </style>
 
+<!-- Add JavaScript for copy functionality -->
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Change button text temporarily
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Gekopieerd!";
+        setTimeout(function() {
+            btn.textContent = originalText;
+        }, 1500);
+    });
+}
+</script>
+
 <!-- Watermark -->
 <div class="watermark">
     huiswerk assistent - gemaakt door zakaria
 </div>
 
-<!-- Top Bar with Model Selector -->
-<div class="topbar">
-    <div class="model-selector">
-        <span id="current-model">Gemini 1.5 Flash</span>
-        <span style="margin-left: 5px;">▼</span>
-    </div>
-</div>
+<!-- No topbar - removed -->
+
 """, unsafe_allow_html=True)
 
 # Initialize session state variables
@@ -321,12 +299,7 @@ genai.configure(api_key="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
 
 # Enhanced sidebar with modern design
 with st.sidebar:
-    # New Chat Button
-    st.markdown("""
-    <div class="new-chat-btn" onclick="document.getElementById('new_chat_btn').click();">
-        <span class="icon">➕</span> Nieuwe Chat
-    </div>
-    """, unsafe_allow_html=True)
+    # New Chat Button (removed duplicate in the UI)
     if st.button("Nieuwe Chat", key="new_chat_btn", help="Start een nieuwe chat"):
         st.session_state.messages = []
         st.session_state.show_presets = True
@@ -338,13 +311,6 @@ with st.sidebar:
     # Collapsible Gems Section
     with st.expander("✨ Bewaarde Items", expanded=False):
         st.markdown("### Huiswerk")
-        
-        # Make gem items clickable and functional
-        st.markdown("""
-        <div class="chat-history-item" onclick="document.getElementById('gem_german_states').click();">
-            <span class="icon">⭐</span> Duitse Deelstaten Referentie
-        </div>
-        """, unsafe_allow_html=True)
         if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
             # Reset the context and messages to start a fresh chat
             st.session_state.messages = []
@@ -558,11 +524,17 @@ if st.session_state.show_presets and not st.session_state.messages:
         st.session_state.show_presets = False
         st.rerun()
 
-# Display chat messages
+    # Display chat messages
 with main_container:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            # Add copy button for each message
+            st.markdown(f"""
+            <div class="message-container">
+                {message["content"]}
+                <button class="copy-btn" onclick="copyToClipboard('{message["content"].replace("'", "\\'")}')">Kopiëren</button>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Chat input
     if prompt := st.chat_input("Typ je vraag hier..."):
