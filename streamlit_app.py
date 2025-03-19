@@ -575,7 +575,7 @@ with chat_container:
                         st.session_state.context = preset_data["content"]
                         
                         # Add first AI message asking for the state/region
-                        st.session_state.messages.append({"role": "assistant", "content": "Wat is je deelstaat?"})
+                        st.session_state.messages.append({"role": "assistant", "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"})
                         
                         st.rerun()
             
@@ -645,10 +645,12 @@ with chat_container:
                     Context informatie:
                     {st.session_state.context}
                     
-                    Op basis van bovenstaande context, beantwoord deze vraag direct en bondig zonder extra disclaimers of uitleg:
-                    {prompt}
+                    Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
                     
-                    Geef alleen het antwoord zonder inleidingen, disclaimers of conclusies. Houd het kort en to-the-point.
+                    1. Gebruik precies de secties zoals aangegeven in de context
+                    2. Presenteer de informatie in duidelijke kopjes en punten
+                    3. Volg exact de format uit de context
+                    4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
                     """
                 
                 # Generate content with streaming
