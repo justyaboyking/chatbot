@@ -22,39 +22,16 @@ with st.sidebar:
         index=0
     )
     
-    # Context management
+    # Text area for additional context (no size limit)
     st.header("Context Management")
     
-    # Initialize context in session state if not present
-    if "context" not in st.session_state:
-        st.session_state.context = ""
-    
-    # Text area for visible context preview with a character counter
-    preview_length = min(len(st.session_state.context), 1000)
-    if len(st.session_state.context) > 1000:
-        preview_message = f"Showing first 1000 of {len(st.session_state.context)} characters. Full context will be used."
-    else:
-        preview_message = f"Context length: {len(st.session_state.context)} characters"
-    
-    st.text_area(
-        "Context Preview (Read Only)",
-        st.session_state.context[:1000] + ("..." if len(st.session_state.context) > 1000 else ""),
-        height=200,
-        disabled=True
+    st.text(f"Current context length: {len(st.session_state.context)} characters")
+    st.session_state.context = st.text_area(
+        "Add Background Information/Context (No Size Limit)",
+        st.session_state.context,
+        height=400,
+        help="This information will be included with every prompt sent to the model."
     )
-    st.caption(preview_message)
-    
-    # Expandable section to edit context
-    with st.expander("Edit Context"):
-        new_context = st.text_area(
-            "Add/Edit Context (No Size Limit)",
-            st.session_state.context,
-            height=400,
-            help="This information will be included with every prompt sent to the model."
-        )
-        if st.button("Update Context"):
-            st.session_state.context = new_context
-            st.experimental_rerun()
     
     # File uploader for additional context
     uploaded_file = st.file_uploader("Or Upload a Text File", type=["txt", "md", "csv", "json"])
