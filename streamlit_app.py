@@ -300,7 +300,7 @@ if st.session_state.show_presets and not st.session_state.messages:
                 """, unsafe_allow_html=True)
                 
                 # Hidden button triggered by the card
-                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
                     # Set context
                     st.session_state.context = preset_data["content"]
                     
@@ -331,7 +331,7 @@ if st.session_state.show_presets and not st.session_state.messages:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn", label_visibility="collapsed"):
+                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
                         # Set context
                         st.session_state.context = preset_content
                         
