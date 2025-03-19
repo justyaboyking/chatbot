@@ -420,7 +420,7 @@ Kwaliteit van de informatie: /20
 Structuur en uiterlijk van de PowerPoint: /10
 Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!""",
-            "description": "PowerPoint-presentatie instructies in Duits en Nederlands"
+            "description": ""
         }
     }
     
@@ -430,14 +430,13 @@ Veel succes!""",
         # Display a clean card with animation
         st.markdown(f"""
         <div class="preset-card">
-            <strong>{preset_name}</strong><br>
-            <small>{preset_data["description"]}</small>
+            <strong>{preset_name}</strong>
         </div>
         """, unsafe_allow_html=True)
         
         # Clean button for selection
-        if st.button(f"Selecteer {preset_name}", key=f"{preset_name.replace(' ', '_')}_btn"):
-            with st.spinner('Preset laden...'):
+        if st.button(f"Selecteer", key=f"{preset_name.replace(' ', '_')}_btn"):
+            with st.spinner('Laden...'):
                 time.sleep(0.3)  # Slight delay for feedback
                 st.session_state.context = preset_data["content"]
                 st.rerun()
@@ -524,15 +523,45 @@ with col2:
             st.session_state.messages = []
             st.rerun()
 
-# Display welcome screen if no messages with clean styling
+# Display welcome screen with presets if no messages with clean styling
 with chat_container:
     if not st.session_state.messages:
         st.markdown("""
         <div class="welcome-screen">
             <h3>Welkom bij Home Work Bot</h3>
-            <p>Kies een preset of stel een vraag om te beginnen.</p>
+            <p>Kies een preset om te beginnen</p>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Display presets in the main area (not just sidebar)
+        st.subheader("Beschikbare presets:")
+        
+        # Create columns for preset cards
+        preset_cols = st.columns(3)
+        
+        # Display presets in a grid layout
+        col_idx = 0
+        for preset_name, preset_data in presets.items():
+            with preset_cols[col_idx]:
+                st.markdown(f"""
+                <div class="preset-card">
+                    <strong>{preset_name}</strong>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button(f"Selecteer", key=f"main_{preset_name.replace(' ', '_')}_btn"):
+                    with st.spinner('Laden...'):
+                        time.sleep(0.3)
+                        # Set the context
+                        st.session_state.context = preset_data["content"]
+                        
+                        # Add first AI message asking for the state/region
+                        st.session_state.messages.append({"role": "assistant", "content": "Wat is je deelstaat?"})
+                        
+                        st.rerun()
+            
+            # Update column index for next preset
+            col_idx = (col_idx + 1) % 3
     
     # Display chat messages with clean styling
     for message in st.session_state.messages:
