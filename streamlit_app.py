@@ -557,8 +557,10 @@ if prompt := st.chat_input("Stel een vraag..."):
             Context informatie:
             {st.session_state.context}
             
-            Op basis van bovenstaande context, beantwoord deze vraag of verzoek:
+            Op basis van bovenstaande context, beantwoord deze vraag direct en bondig zonder extra disclaimers of uitleg:
             {prompt}
+            
+            Geef alleen het antwoord zonder inleidingen, disclaimers of conclusies. Houd het kort en to-the-point.
             """
         
         # Generate content with clean styling
@@ -591,6 +593,6 @@ if prompt := st.chat_input("Stel een vraag..."):
 # Clean footer
 st.markdown("""
 <div class="footer">
-    Home Work Bot — Gemaakt door een professioneel team © 2025
+    home work bot - made by zakaria
 </div>
 """, unsafe_allow_html=True)
