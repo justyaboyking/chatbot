@@ -186,6 +186,16 @@ with st.sidebar:
             height=300,
             key="custom_context"
         )
+        
+        # Add Save Preset functionality
+        if st.session_state.context.strip():
+            with st.expander("Save as Preset", expanded=False):
+                preset_name = st.text_input("Preset Name:", key="new_preset_name")
+                if st.button("Save Preset") and preset_name:
+                    st.session_state.user_presets[preset_name] = st.session_state.context
+                    st.success(f"Preset '{preset_name}' saved successfully!")
+                    st.rerun()
+        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Save", key="save_context"):
