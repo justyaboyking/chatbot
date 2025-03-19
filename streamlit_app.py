@@ -1,3 +1,6 @@
+# Required dependencies:
+# pip install PyPDF2 python-docx
+
 import streamlit as st 
 import google.generativeai as genai
 import time
