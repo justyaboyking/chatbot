@@ -161,7 +161,7 @@ st.markdown("""
         padding: 12px !important;
     }
     
-    /* Position chat input at the absolute bottom */
+    /* Position chat input at bottom of viewport */
     .stChatInput {
         position: fixed;
         bottom: 0;
@@ -174,26 +174,35 @@ st.markdown("""
         margin: 0;
     }
     
-    /* Add much more padding at the bottom of chat container */
+    /* Moderate padding for chat container */
     [data-testid="stChatMessageContainer"] {
-        padding-bottom: 200px !important;
-        margin-bottom: 100px !important;
+        padding-bottom: 80px !important;
+        margin-bottom: 0 !important;
     }
     
-    /* Give chat messages more room */
+    /* Adjust main container to keep content in viewport */
     .main .block-container {
-        padding-bottom: 250px;
+        padding-bottom: 70px;
         max-width: 1000px;
     }
     
-    /* Space content vertically */
+    /* Space text elements vertically without excessive spacing */
     [data-testid="stChatMessageContent"] p {
-        margin-bottom: 1em !important;
+        margin-bottom: 0.5em !important;
+        line-height: 1.6 !important;
     }
     
-    /* Footer adjustment to make room for chat input */
+    /* Make chat container auto-scroll to bottom */
+    [data-testid="stChatMessageContainer"] {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column-reverse;
+    }
+    
+    /* Footer adjustment */
     .footer {
-        display: none; /* Hide footer to avoid overlap */
+        display: none;
     }
     
     /* Clean preset cards with subtle animation */
@@ -631,8 +640,8 @@ with chat_container:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-        # Add spacer to ensure content doesn't get hidden behind fixed chat input
-        st.markdown("<div style='height: 300px'></div>", unsafe_allow_html=True)
+        # Add minimal spacer to ensure content doesn't get hidden behind fixed chat input
+        st.markdown("<div style='height: 70px'></div>", unsafe_allow_html=True)
             
         # Chat input only appears after selecting a preset
         if prompt := st.chat_input("Typ je vraag..."):
