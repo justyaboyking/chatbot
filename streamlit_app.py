@@ -5,7 +5,7 @@ import io
 
 # Set page config
 st.set_page_config(
-    page_title="Huiswerk Assistent",
+    page_title="Home Work Bot",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -165,16 +165,15 @@ st.markdown("""
     }
 </style>
 
-<!-- Add JavaScript for copy functionality -->
+<!-- Add JavaScript for copy functionality - FIXED -->
 <script>
-function copyToClipboard(text) {
+function copyToClipboard(text, btnElement) {
     navigator.clipboard.writeText(text).then(function() {
         // Change button text temporarily
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = "Gekopieerd!";
+        const originalText = btnElement.textContent;
+        btnElement.textContent = "Gekopieerd!";
         setTimeout(function() {
-            btn.textContent = originalText;
+            btnElement.textContent = originalText;
         }, 1500);
     });
 }
@@ -182,7 +181,7 @@ function copyToClipboard(text) {
 
 <!-- Watermark met aangepaste tekst -->
 <div class="watermark">
-    Huiswerk Assistent v1.0 - Gemaakt door Jouw Naam
+    Home Work Bot v1.0 - Gemaakt door Jouw Naam
 </div>
 
 <!-- No topbar - removed -->
@@ -318,14 +317,14 @@ with st.sidebar:
     
     # Collapsible Gems Section
     with st.expander("✨ Huiswerk", expanded=False):
-        st.markdown("### Duitse deelstaat")
+        st.markdown("### Huiswerk")
         if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
             # Reset the context and messages to start a fresh chat
             st.session_state.messages = []
             st.session_state.context = presets["duits deelstaten"]["content"]
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
+                "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
             })
             st.session_state.show_presets = False
             st.session_state.active_chat = "Duitse Deelstaten Referentie"
@@ -435,29 +434,16 @@ if st.session_state.show_presets and not st.session_state.messages:
         st.session_state.show_presets = False
         st.rerun()
 
-    # Display chat messages
+# Display chat messages
 with main_container:
     for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
-            # Add copy button for each message
+            # Add copy button for each message - FIXED
             st.markdown(f"""
             <div class="message-container">
                 {message["content"]}
-                <button class="copy-btn" onclick="copyToClipboard{i}()">Kopiëren</button>
+                <button class="copy-btn" onclick="copyToClipboard(`{message["content"].replace('`', '\`').replace("'", "\\'")}`, this)">Kopiëren</button>
             </div>
-            <script>
-            function copyToClipboard{i}() {{
-                const text = `{message["content"]}`;
-                navigator.clipboard.writeText(text).then(function() {{
-                    const btn = document.querySelector(".copy-btn");
-                    const originalText = btn.textContent;
-                    btn.textContent = "Gekopieerd!";
-                    setTimeout(function() {{
-                        btn.textContent = originalText;
-                    }}, 1500);
-                }});
-            }}
-            </script>
             """, unsafe_allow_html=True)
     
     # Chat input
@@ -479,12 +465,12 @@ with main_container:
                 generation_config={"temperature": st.session_state.temperature}
             )
             
-            if st.session_state.context:
+            if st.session_state.context and st.session_state.active_chat == "Duitse Deelstaten Referentie":
                 complete_prompt = f"""
                 Context informatie:
                 {st.session_state.context}
                 
-                Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
+                Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{prompt}" en volg exact de structuur uit de context:
                 
                 1. Gebruik precies de secties zoals aangegeven in de context
                 2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
@@ -505,6 +491,15 @@ with main_container:
                 Einwohnerzahl: [inwoners]
                 
                 Enzovoort voor alle secties uit de context.
+                """
+            elif st.session_state.context:
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                Vraag: {prompt}
+                
+                Beantwoord de vraag op basis van de gegeven context.
                 """
             else:
                 complete_prompt = prompt
