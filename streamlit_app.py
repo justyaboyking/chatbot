@@ -161,14 +161,23 @@ st.markdown("""
         padding: 12px !important;
     }
     
-    /* Modern chat input */
-    [data-testid="stChatInput"] {
-        background-color: #0a0a0a;
-        border: 1px solid #333;
-        border-radius: 30px !important;
-        color: white;
-        padding: 12px 18px !important;
-        margin-top: 1rem;
+    /* Position chat input at the bottom */
+    .stChatInput {
+        position: fixed;
+        bottom: 20px;
+        left: 400px; /* Account for sidebar width */
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    /* Add padding at the bottom of chat container to make room for fixed input */
+    [data-testid="stChatMessageContainer"] {
+        padding-bottom: 80px !important;
+    }
+    
+    /* Give chat messages more room */
+    .main .block-container {
+        padding-bottom: 100px;
     }
     
     /* Clean preset cards with subtle animation */
@@ -606,6 +615,9 @@ with chat_container:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
+        # Add spacer to ensure content doesn't get hidden behind fixed chat input
+        st.markdown("<div style='height: 80px'></div>", unsafe_allow_html=True)
+            
         # Chat input only appears after selecting a preset
         if prompt := st.chat_input("Typ je vraag..."):
             # Add user message to chat
