@@ -161,24 +161,34 @@ st.markdown("""
         padding: 12px !important;
     }
     
-    /* Position chat input at the very bottom of the page */
+    /* Position chat input at the absolute bottom */
     .stChatInput {
         position: fixed;
-        bottom: 5px;
+        bottom: 0;
         left: 400px; /* Account for sidebar width */
-        right: 20px;
+        right: 0;
         z-index: 1000;
-        margin-bottom: 0;
+        padding: 15px;
+        background-color: #0f0f0f;
+        border-top: 1px solid #333;
+        margin: 0;
     }
     
     /* Add much more padding at the bottom of chat container */
     [data-testid="stChatMessageContainer"] {
-        padding-bottom: 120px !important;
+        padding-bottom: 200px !important;
+        margin-bottom: 100px !important;
     }
     
     /* Give chat messages more room */
     .main .block-container {
-        padding-bottom: 150px;
+        padding-bottom: 250px;
+        max-width: 1000px;
+    }
+    
+    /* Space content vertically */
+    [data-testid="stChatMessageContent"] p {
+        margin-bottom: 1em !important;
     }
     
     /* Footer adjustment to make room for chat input */
@@ -622,7 +632,7 @@ with chat_container:
                 st.markdown(message["content"])
 
         # Add spacer to ensure content doesn't get hidden behind fixed chat input
-        st.markdown("<div style='height: 150px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 300px'></div>", unsafe_allow_html=True)
             
         # Chat input only appears after selecting a preset
         if prompt := st.chat_input("Typ je vraag..."):
@@ -648,9 +658,24 @@ with chat_container:
                     Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
                     
                     1. Gebruik precies de secties zoals aangegeven in de context
-                    2. Presenteer de informatie in duidelijke kopjes en punten
-                    3. Volg exact de format uit de context
+                    2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
+                    3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
                     4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
+                    5. Zorg dat elke sectie apart en duidelijk leesbaar is
+                    
+                    Format de tekst zo:
+                    
+                    Algemene Informatie:
+                    
+                    Naam: [naam]
+                    
+                    Hoofdstad: [hoofdstad]
+                    
+                    Fläche: [oppervlakte]
+                    
+                    Einwohnerzahl: [inwoners]
+                    
+                    Enzovoort voor alle secties uit de context.
                     """
                 
                 # Generate content with streaming
