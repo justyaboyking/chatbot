@@ -1,11 +1,6 @@
-# Required dependencies:
-# pip install PyPDF2 python-docx
-
 import streamlit as st 
 import google.generativeai as genai
 import time
-import PyPDF2
-import docx
 import io
 
 # Set page config
@@ -180,15 +175,21 @@ with st.sidebar:
             file_text = ""
             if uploaded_file.name.lower().endswith("pdf"):
                 try:
+                    import PyPDF2
                     reader = PyPDF2.PdfReader(uploaded_file)
                     for page in reader.pages:
                         file_text += page.extract_text() + "\n"
+                except ModuleNotFoundError:
+                    st.error("PyPDF2 is not installed. Please run 'pip install PyPDF2'.")
                 except Exception as e:
                     st.error(f"Error reading PDF: {str(e)}")
             elif uploaded_file.name.lower().endswith("docx"):
                 try:
+                    import docx
                     doc = docx.Document(uploaded_file)
                     file_text = "\n".join([para.text for para in doc.paragraphs])
+                except ModuleNotFoundError:
+                    st.error("python-docx is not installed. Please run 'pip install python-docx'.")
                 except Exception as e:
                     st.error(f"Error reading Word document: {str(e)}")
             if file_text:
