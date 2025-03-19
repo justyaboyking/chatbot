@@ -288,20 +288,7 @@ with st.sidebar:
         )
         st.session_state.temperature = temperature
     
-    # Bottom section with links
-    st.markdown("<div class='sidebar-section'></div>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="chat-history-item">
-        <span class="icon">❓</span> Help
-    </div>
-    <div class="chat-history-item">
-        <span class="icon">📊</span> Activity
-    </div>
-    <div class="chat-history-item">
-        <span class="icon">⚙️</span> Settings
-    </div>
-    """, unsafe_allow_html=True)
+    # Bottom section removed - keeping only Gems expander above
     
     # Context Management (moved from old design)
     with st.expander("📄 Context Management", expanded=False):
@@ -364,7 +351,7 @@ with st.sidebar:
 
 # Define presets
 presets = {
-    "Duits Deelstaten": {
+    "duits deelstaten": {
         "content": """PowerPoint Präsentation / PowerPoint Presentatie
 Deutsch:
 Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
@@ -456,12 +443,6 @@ Structuur en uiterlijk van de PowerPoint: /10
 Hoe je presenteert en hoe goed men je begrijpt: /10  
 
 Veel succes!"""
-    },
-    "Nederlands Vertaling": {
-        "content": "Vertaal zinnen van Nederlands naar Engels of van Engels naar Nederlands, waarbij je rekening houdt met context, idiomatische uitdrukkingen, en grammaticale structuren. Geef uitleg bij moeilijke vertaalkeuzes."
-    },
-    "Aardrijkskunde Hulp": {
-        "content": "Beantwoord vragen over geografie, klimaat, landschappen, bevolking, economie en cultuur van verschillende landen en regio's. Gebruik duidelijke, eenvoudige taal die geschikt is voor scholieren."
     }
 }
 
@@ -483,23 +464,13 @@ if st.session_state.show_presets and not st.session_state.messages:
                 st.markdown(f"""
                 <div class="preset-card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
                     <strong>{preset_name}</strong>
-                    <p style="margin-top: 0.5rem; font-size: 0.9em; opacity: 0.8;">
-                        {preset_data["content"][:100]}...
-                    </p>
                 </div>
                 """, unsafe_allow_html=True)
                 if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
                     st.session_state.context = preset_data["content"]
                     
-                    # Different welcome message based on selected preset
-                    if preset_name == "Duits Deelstaten":
-                        welcome_msg = "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-                    elif preset_name == "Nederlands Vertaling":
-                        welcome_msg = "Welke zin wil je laten vertalen?"
-                    elif preset_name == "Aardrijkskunde Hulp":
-                        welcome_msg = "Welke geografische vraag heb je?"
-                    else:
-                        welcome_msg = "Wat is je vraag?"
+                    # Welcome message for German states preset
+                    welcome_msg = "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
                         
                     st.session_state.messages.append({
                         "role": "assistant", 
