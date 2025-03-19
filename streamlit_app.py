@@ -131,7 +131,6 @@ with st.sidebar:
             options=list(model_options.keys()),
             index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
         )
-        
         st.session_state.model_name = model_options[selected_model]
         
         st.subheader("Response Style")
@@ -178,7 +177,7 @@ with st.sidebar:
                 if st.button("Load File Content into Context"):
                     st.session_state.context += "\n" + file_text
                     st.success("File content added to context.")
-                    st.experimental_rerun()
+                    st.rerun()
         
         # Text area to edit context
         custom_context = st.text_area(
@@ -187,7 +186,6 @@ with st.sidebar:
             height=300,
             key="custom_context"
         )
-        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Save", key="save_context"):
@@ -213,7 +211,7 @@ Name:
 Hauptstadt:
 Fläche:
 Einwohnerzahl:
-Lage auf der Karte: [Füge eine Karte ein]
+Lage auf der kaart: [Füge eine Karte ein]
 Geschichte:
 Kurze Geschichte von dem Thema:
 Sehenswürdigkeiten:
@@ -225,25 +223,28 @@ Wichtige Industrien und was man verdient:
 Sonstiges:
 Interessante Fakten oder besondere Sachen:
 Schreibe deine Notizen in einer guten Reihenfolge, damit deine PowerPoint eine gute Struktur hat.
-Schritt 2: Die PowerPoint-Präsentation machen
+Schritt 2: Die PowerPoint-Präsentation maken
 Mache jetzt eine PowerPoint-Präsentation mit mindestens 6 Folien. Achte auf diese Punkte:
 
-Klare und einfache Struktur
-Nicht zu viel Text auf einer Folie - Stichpunkte sind besser
-Benutze Bilder, Karten oder Diagramme
+Klare und einfache Struktur  
+Nicht zu viel Text auf einer Folie - Stichpunkte sind besser  
+Benutze Bilder, Karten oder Diagramme  
 Einheitliches Aussehen (Farben, Schriftarten)
-Schritt 3: Präsentation vor der Klasse
+
+Schritt 3: Präsentation vor der Klasse  
 Präsentiere deine Präsentation vor der Klasse. Achte auf diese Dinge:
 
-Verständliche und deutliche Aussprache
-Schaue die Leute an
-Sprich nicht zu schnell
+Verständliche und deutliche Aussprache  
+Schaue die Leute an  
+Sprich nicht zu schnell  
 Benutze deine PowerPoint als Hilfe (nicht nur ablesen!)
+
 Bewertungskriterien:
 
-Qualität der Informationen: /20
-Struktur und Aussehen der PowerPoint: /10
-Wie du präsentierst und wie gut man dich versteht: /10
+Qualität der Informationen: /20  
+Struktur und Aussehen der PowerPoint: /10  
+Wie du präsentierst und wie gut man dich versteht: /10  
+
 Viel Erfolg!
 Nederlands:
 Taak: Maak een PowerPoint-presentatie over een onderwerp naar keuze. Het proces omvat: schriftelijke voorbereiding, het maken van de PowerPoint-presentatie en de presentatie voor de klas.
@@ -270,22 +271,25 @@ Orden je notities in een logische volgorde om een goede structuur voor je PowerP
 Stap 2: De PowerPoint-presentatie maken
 Maak nu een PowerPoint-presentatie met minstens 6 dia's. Let op de volgende punten:
 
-Duidelijke en eenvoudige structuur
-Niet te veel tekst op één dia - opsommingstekens zijn beter
-Gebruik afbeeldingen, kaarten of diagrammen
+Duidelijke en eenvoudige structuur  
+Niet te veel tekst op één dia - opsommingstekens zijn beter  
+Gebruik afbeeldingen, kaarten of diagrammen  
 Consistent ontwerp (kleuren, lettertypen)
+
 Stap 3: Presentatie voor de klas
 Geef je presentatie voor de klas. Let daarbij op het volgende:
 
-Verstaanbare en duidelijke uitspraak
-Kijk de mensen aan
-Spreek niet te snel
+Verstaanbare en duidelijke uitspraak  
+Kijk de mensen aan  
+Spreek niet te snel  
 Gebruik je PowerPoint als hulp (niet alleen voorlezen!)
+
 Beoordelingscriteria:
 
-Kwaliteit van de informatie: /20
-Structuur en uiterlijk van de PowerPoint: /10
-Hoe je presenteert en hoe goed men je begrijpt: /10
+Kwaliteit van de informatie: /20  
+Structuur en uiterlijk van de PowerPoint: /10  
+Hoe je presenteert en hoe goed men je begrijpt: /10  
+
 Veel succes!"""
     }
 }
@@ -298,7 +302,6 @@ if st.session_state.show_presets and not st.session_state.messages:
         st.subheader("Kies een preset om te beginnen")
         cols = st.columns(3)
         col_idx = 0
-        
         for preset_name, preset_data in presets.items():
             with cols[col_idx]:
                 st.markdown(f"""
@@ -306,7 +309,6 @@ if st.session_state.show_presets and not st.session_state.messages:
                     <strong>{preset_name}</strong>
                 </div>
                 """, unsafe_allow_html=True)
-                
                 if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
                     st.session_state.context = preset_data["content"]
                     st.session_state.messages.append({
@@ -328,7 +330,6 @@ if st.session_state.show_presets and not st.session_state.messages:
                         <strong>{preset_name}</strong>
                     </div>
                     """, unsafe_allow_html=True)
-                    
                     if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
                         st.session_state.context = preset_content
                         st.session_state.messages.append({
@@ -349,13 +350,11 @@ with main_container:
         st.session_state.show_presets = False
         with st.chat_message("user"):
             st.markdown(prompt)
-        
         try:
             model = genai.GenerativeModel(
                 st.session_state.model_name,
                 generation_config={"temperature": st.session_state.temperature}
             )
-            
             if st.session_state.context:
                 complete_prompt = f"""
                 Context informatie:
