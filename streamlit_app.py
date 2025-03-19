@@ -3,33 +3,29 @@ import requests
 import json
 import time
 
-# Show title and description
+# Title and description
 st.title("💬 Multi-Provider AI Chatbot")
-st.write(
-    "A versatile chatbot that supports multiple AI providers including NVIDIA, Together AI, Baseten, and Fireworks AI."
-)
+st.write("A versatile chatbot that supports multiple AI providers including NVIDIA, Together AI, Baseten, and Fireworks AI.")
 
-# Configure API settings
+# Sidebar: API configuration
 st.sidebar.header("API Configuration")
-
-# Provider selection
 provider = st.sidebar.selectbox(
     "Select AI Provider",
     options=["NVIDIA", "Together AI", "Baseten", "Fireworks AI"],
     index=0
 )
 
-# NVIDIA configuration
 if provider == "NVIDIA":
     api_key = st.sidebar.text_input(
-        "NVIDIA API Key", 
-        type="password", 
-        value="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"
+        "NVIDIA API Key",
+        type="password",
+        value="your-api-key-here"
     )
     model_name = st.sidebar.text_input(
-        "Model Name", 
+        "Model Name",
         value="NVIDIABuild-Autogen-30"
     )
+    # Use the official integration endpoint as default.
     api_endpoint = st.sidebar.selectbox(
         "API Endpoint",
         options=[
@@ -41,11 +37,9 @@ if provider == "NVIDIA":
         ],
         index=0
     )
-
-# Together AI configuration
 elif provider == "Together AI":
     api_key = st.sidebar.text_input(
-        "Together AI API Key", 
+        "Together AI API Key",
         type="password"
     )
     model_name = st.sidebar.selectbox(
@@ -59,22 +53,16 @@ elif provider == "Together AI":
         index=0
     )
     api_endpoint = "https://api.together.xyz/v1/chat/completions"
-
-# Baseten configuration
 elif provider == "Baseten":
     api_key = st.sidebar.text_input(
-        "Baseten API Key", 
+        "Baseten API Key",
         type="password"
     )
-    model_id = st.sidebar.text_input(
-        "Model ID"
-    )
+    model_id = st.sidebar.text_input("Model ID")
     api_endpoint = f"https://app.baseten.co/models/{model_id}/predict"
-
-# Fireworks AI configuration
 elif provider == "Fireworks AI":
     api_key = st.sidebar.text_input(
-        "Fireworks AI API Key", 
+        "Fireworks AI API Key",
         type="password"
     )
     model_name = st.sidebar.selectbox(
@@ -88,39 +76,24 @@ elif provider == "Fireworks AI":
     )
     api_endpoint = "https://api.fireworks.ai/inference/v1/chat/completions"
 
-# Common parameters
-temperature = st.sidebar.slider(
-    "Temperature", 
-    min_value=0.0, 
-    max_value=1.0, 
-    value=0.7, 
-    step=0.1
-)
-
-max_tokens = st.sidebar.slider(
-    "Max Tokens", 
-    min_value=100, 
-    max_value=2000, 
-    value=800, 
-    step=100
-)
-
-# Toggle advanced debugging
+temperature = st.sidebar.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7, step=0.1)
+max_tokens = st.sidebar.slider("Max Tokens", min_value=100, max_value=2000, value=800, step=100)
 debug_mode = st.sidebar.checkbox("Debug Mode")
 
+# If no API key, show info message
 if not api_key:
     st.info(f"Please add your {provider} API key to continue.", icon="🗝️")
 else:
-    # Create a session state variable to store the chat messages
+    # Initialize session state for messages
     if "messages" not in st.session_state:
         st.session_state.messages = []
-
-    # Display the existing chat messages
+    
+    # Display conversation messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Debug information panel
+    # Debug information if enabled
     if debug_mode:
         with st.expander("Debug Information"):
             st.write(f"Provider: {provider}")
@@ -129,192 +102,98 @@ else:
                 st.write(f"Model Name: {model_name}")
             else:
                 st.write(f"Model ID: {model_id}")
-            st.write(f"API Key (first 10 chars): {api_key[:10]}..." if api_key else "No API key")
+            st.write(f"API Key (first 10 chars): {api_key[:10]}...")
             st.write(f"Number of Messages: {len(st.session_state.messages)}")
     
-    # Create a chat input field
+    # Chat input field
     if prompt := st.chat_input("What would you like to know?"):
-        # Store and display the current prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
-        # Prepare the API request based on the selected provider
-        headers = {
-            "Content-Type": "application/json"
-        }
         
-        # Set authentication and payload based on provider
-        if provider == "NVIDIA":
-            headers["Authorization"] = f"Bearer {api_key}"
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {"role": m["role"], "content": m["content"]} 
-                    for m in st.session_state.messages
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": True
-            }
-        
-        elif provider == "Together AI":
-            headers["Authorization"] = f"Bearer {api_key}"
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {"role": m["role"], "content": m["content"]} 
-                    for m in st.session_state.messages
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": True
-            }
-        
-        elif provider == "Baseten":
-            headers["Authorization"] = f"Api-Key {api_key}"
-            payload = {
-                "messages": [
-                    {"role": m["role"], "content": m["content"]} 
-                    for m in st.session_state.messages
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens
-            }
-        
-        elif provider == "Fireworks AI":
-            headers["Authorization"] = f"Bearer {api_key}"
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {"role": m["role"], "content": m["content"]} 
-                    for m in st.session_state.messages
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": True
-            }
-        
-        # Generate a response using the selected API
+        # Prepare API request
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
-            
             try:
-                with st.spinner(f"Generating response using {provider}..."):
-                    # Debug information
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_key}"
+                }
+                # Build the payload (ensure required parameters are included)
+                payload = {
+                    "model": model_name,
+                    "messages": [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    "stream": True
+                }
+                
+                if debug_mode:
+                    st.write("Request Payload:")
+                    st.json(payload)
+                    st.write("Request Headers:")
+                    safe_headers = headers.copy()
+                    safe_headers["Authorization"] = safe_headers["Authorization"][:15] + "..."
+                    st.json(safe_headers)
+                
+                # Make the API request
+                response = requests.post(api_endpoint, headers=headers, json=payload, stream=True, timeout=60)
+                
+                # Check for errors in HTTP response
+                if response.status_code != 200:
+                    error_message = f"Error {response.status_code}: {response.text}"
+                    st.error(error_message)
                     if debug_mode:
-                        st.write("Request Payload:")
-                        st.json(payload)
-                        st.write("Request Headers:")
-                        safe_headers = headers.copy()
-                        if "Authorization" in safe_headers:
-                            safe_headers["Authorization"] = safe_headers["Authorization"][:15] + "..."
-                        st.json(safe_headers)
-                    
-                    # Make the API request
-                    is_streaming = provider != "Baseten" and payload.get("stream", False)
-                    
-                    response = requests.post(
-                        api_endpoint,
-                        headers=headers,
-                        json=payload,
-                        stream=is_streaming,
-                        timeout=60
+                        st.write("Full response:")
+                        st.code(response.text)
+                        st.write("Response headers:")
+                        st.json(dict(response.headers))
+                    st.warning(
+                        f"Troubleshooting suggestions for {provider}:\n"
+                        f"1. Verify your API key is valid\n"
+                        f"2. Check if the model name/ID is correct\n"
+                        f"3. Make sure you have access to the specified model\n"
+                        f"4. Try a different API endpoint (if applicable)"
                     )
-                    
-                    # Check for HTTP errors
-                    if response.status_code != 200:
-                        error_message = f"Error {response.status_code}: {response.text}"
-                        st.error(error_message)
-                        
+                else:
+                    # Process streaming response
+                    for line in response.iter_lines():
+                        if not line:
+                            continue
+                        line_text = line.decode("utf-8").strip()
                         if debug_mode:
-                            st.write("Full response:")
-                            st.code(response.text)
-                            st.write("Response headers:")
-                            st.json(dict(response.headers))
-                            
-                        # Suggest troubleshooting steps
-                        st.warning(f"""
-                        Troubleshooting suggestions for {provider}:
-                        1. Verify your API key is valid
-                        2. Check if the model name/ID is correct
-                        3. Make sure you have access to the specified model
-                        4. Try a different API endpoint (if applicable)
-                        """)
-                    
-                    # Process streaming response (for providers that support it)
-                    elif is_streaming:
-                        for line in response.iter_lines():
-                            if not line:
-                                continue
-                                
-                            line_text = line.decode('utf-8')
-                            
-                            # Debug raw response
-                            if debug_mode:
-                                st.code(line_text, language="json")
-                                
-                            # Handle SSE format
-                            if line_text == "data: [DONE]":
+                            st.code(line_text, language="json")
+                        if line_text == "data: [DONE]":
+                            break
+                        if line_text.startswith("data: "):
+                            try:
+                                json_str = line_text[6:]  # Remove "data: " prefix
+                                chunk = json.loads(json_str)
+                                if "choices" in chunk and chunk["choices"]:
+                                    delta = chunk["choices"][0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        full_response += content
+                                        message_placeholder.markdown(full_response)
+                            except json.JSONDecodeError as e:
+                                st.error(f"Error parsing response: {e}")
+                                if debug_mode:
+                                    st.code(line_text)
                                 break
-                                
-                            if line_text.startswith("data: "):
-                                try:
-                                    json_str = line_text[6:]  # Remove "data: " prefix
-                                    chunk = json.loads(json_str)
-                                    
-                                    if "choices" in chunk and chunk["choices"]:
-                                        if "delta" in chunk["choices"][0]:
-                                            content = chunk["choices"][0]["delta"].get("content", "")
-                                            if content:
-                                                full_response += content
-                                                message_placeholder.markdown(full_response)
-                                except json.JSONDecodeError as e:
-                                    st.error(f"Error parsing response: {e}")
-                                    if debug_mode:
-                                        st.code(line_text)
-                                    break
-                    
-                    # Process non-streaming response (like Baseten)
-                    else:
-                        response_json = response.json()
-                        
-                        if debug_mode:
-                            st.write("Full response:")
-                            st.json(response_json)
-                            
-                        # Extract response based on provider format
-                        if provider == "Baseten":
-                            if "model_output" in response_json:
-                                output = response_json["model_output"]
-                                if isinstance(output, dict) and "response" in output:
-                                    full_response = output["response"]
-                                else:
-                                    full_response = str(output)
-                            else:
-                                full_response = str(response_json)
-                        else:
-                            # Generic extraction for other non-streaming responses
-                            if "choices" in response_json and response_json["choices"]:
-                                if "message" in response_json["choices"][0]:
-                                    full_response = response_json["choices"][0]["message"].get("content", "")
-                        
-                        # Display the response
-                        message_placeholder.markdown(full_response)
-            
+                    message_placeholder.markdown(full_response)
             except Exception as e:
                 st.error(f"Request failed: {str(e)}")
                 if debug_mode:
                     st.exception(e)
             
-            # Save the assistant's response
+            # Save assistant's response if available
             if full_response:
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             else:
                 st.error(f"No response received from {provider}. Check the API configuration in the sidebar.")
     
-    # Add a clear conversation button
+    # Clear conversation button
     if st.button("Clear Conversation"):
         st.session_state.messages = []
-        st.rerun()
+        st.experimental_rerun()
