@@ -187,14 +187,14 @@ with st.sidebar:
             key="custom_context"
         )
         
-        # Add Save Preset functionality
+        # Save Preset functionality - moved outside the nested expander
         if st.session_state.context.strip():
-            with st.expander("Save as Preset", expanded=False):
-                preset_name = st.text_input("Preset Name:", key="new_preset_name")
-                if st.button("Save Preset") and preset_name:
-                    st.session_state.user_presets[preset_name] = st.session_state.context
-                    st.success(f"Preset '{preset_name}' saved successfully!")
-                    st.rerun()
+            st.subheader("Save as Preset")
+            preset_name = st.text_input("Preset Name:", key="new_preset_name")
+            if st.button("Save Preset") and preset_name:
+                st.session_state.user_presets[preset_name] = st.session_state.context
+                st.success(f"Preset '{preset_name}' saved successfully!")
+                st.rerun()
         
         col1, col2 = st.columns(2)
         with col1:
