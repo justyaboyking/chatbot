@@ -239,7 +239,7 @@ with st.sidebar:
             <div style="font-size: 0.8em; color: #aaa; margin-top: 0.2rem;">{chat['timestamp']}</div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Load", key=f"chat_{chat['title'].replace(' ', '_')}", help=f"Load {chat['title']}", label_visibility="collapsed"):
+        if st.button("Load", key=f"chat_{chat['title'].replace(' ', '_')}", help=f"Load {chat['title']}"):
             st.session_state.active_chat = chat['title']
             st.session_state.show_presets = False
             # Here you would load the actual chat messages
