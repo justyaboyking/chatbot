@@ -288,6 +288,8 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.show_presets = True
         st.session_state.active_chat = None
+        # Reset context when starting new chat
+        st.session_state.context = ""
         st.rerun()
     
     # Remove the Recent Chats section completely
@@ -402,8 +404,10 @@ st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 # Show presets if there are no messages or we're starting a new chat
 if st.session_state.show_presets and not st.session_state.messages:
     with main_container:
-        # Start with a friendly greeting in Dutch
+        # Start with a friendly greeting in Dutch WITHOUT accessing context
         st.session_state.messages = []
+        # Reset context when starting a new chat
+        st.session_state.context = ""
         st.session_state.messages.append({
             "role": "assistant", 
             "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
@@ -451,8 +455,9 @@ with main_container:
                 generation_config={"temperature": st.session_state.temperature}
             )
             
-            # Verwerk de prompt afhankelijk van de actieve chat
-            if st.session_state.context and st.session_state.active_chat == "Duitse Deelstaten Referentie":
+            # ALLEEN context gebruiken als de actieve chat "Duitse Deelstaten Referentie" is
+            # Controleer expliciet op actieve chat
+            if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
                 complete_prompt = f"""
                 Context informatie:
                 {st.session_state.context}
@@ -479,16 +484,8 @@ with main_container:
                 
                 Enzovoort voor alle secties uit de context.
                 """
-            elif st.session_state.context:
-                complete_prompt = f"""
-                Context informatie:
-                {st.session_state.context}
-                
-                Vraag: {prompt}
-                
-                Beantwoord de vraag op basis van de gegeven context.
-                """
             else:
+                # Anders geen context gebruiken, gewoon de prompt verwerken
                 complete_prompt = prompt
             
             with st.chat_message("assistant"):
