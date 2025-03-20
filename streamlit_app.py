@@ -362,25 +362,32 @@ if "page_content_data" not in st.session_state:
     st.session_state.page_content_data = get_page_content()
 
 # Define direct answers prompt
-direct_answers_prompt = """# Wiskunde Directe Antwoorden
+formatted_answers_prompt = """# Wiskunde Antwoorden Formatter
 
-Je taak is om directe, beknopte antwoorden te geven op wiskundeopgaven zonder lange uitleg.
+Je taak is om volledige antwoorden te geven op wiskundeopgaven in een duidelijke, gestructureerde format.
 
 ## Instructies:
 
-1. Als de leerling "alles" typt, geef ALLEEN de ANTWOORDEN voor ALLE opgaven op de pagina.
-   - GEEN uitleg, alleen de ingevulde tabellen of directe antwoorden
+1. Wanneer de leerling alleen een paginanummer invoert, geef automatisch ALLE antwoorden voor die pagina in het juiste format.
 
-2. Geef alleen de antwoorden, geen uitleg of tussenstappen tenzij specifiek gevraagd
+2. Format voor antwoorden:
+   - Gebruik duidelijke kopjes zoals "Opgave 10" (met nummer)
+   - De vraag kort vermelden
+   - Het antwoord direct geven
+   - Bij tabellen, alle waardes invullen
+   - Bij berekeningen, toon basisbewerkingen maar geen lange uitleg
 
-3. Voor tabellen, geef alleen de volledig ingevulde tabel zonder uitleg
+3. Voorbeeld van goede formattering:
+   Opgave 10: Het verband tussen aantal en kostprijs
+   Vraag: Vul de ontbrekende waarden in de tabel aan.
 
-4. Houd het format consistent:
-   - Bij tabellen, toon alleen de volledig ingevulde tabel
-   - Bij formules, geef alleen het eindresultaat
-   - Bij ja/nee vragen, geef alleen het antwoord
+   a. 
+   Aantal | 0 | 1 | 2 | 3
+   Kostprijs (€) | 50 | 40 | 30 | 20
 
-5. Geen inleidingen, geen conclusies, alleen de directe antwoorden
+4. Gebruik een consistent format voor alle antwoorden met duidelijke scheiding tussen opgaven.
+
+5. Geef directe, duidelijke antwoorden zonder lange toelichtingen.
 """
 
 # Define presets
@@ -479,9 +486,39 @@ Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!"""
     },
     "wiskunde huiswerk": {
-        "content": direct_answers_prompt
+        "content": formatted_answers_prompt
     }
 }
+
+# Voorbeeld antwoord format voor Gemini
+example_answer_format = """
+Opgave 10: Het verband tussen aantal en kostprijs
+Vraag: Vul de ontbrekende waarden in de tabel aan, wetende dat het verband tussen het aantal en de kostprijs lineair is.
+
+We hebben de volgende tabel:
+
+Aantal	0	1	2	3
+Kostprijs (€)	50	40	30	20
+
+Opgave 12: Vul de tabel aan met behulp van de formules
+Vraag 12a: p = 4 x z
+
+De ingevulde tabel voor 12a is:
+z	0	1	2	3	5	15
+p	0	4	8	12	20	60
+
+Vraag 12b: p = 10 + (2 x t)
+
+De ingevulde tabel voor 12b is:
+t	0	1	2	3	5	15
+p	10	12	14	16	20	40
+
+Vraag 12c: p = d x 3,14
+
+De ingevulde tabel voor 12c is:
+d	0	1	2	3	5	15
+p	0	3,14	6,28	9,42	15,7	47,1
+"""
 
 # Configure Gemini API - Use environment variables for security
 load_dotenv()
@@ -615,21 +652,21 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         # Check if user is requesting a specific page in Wiskunde mode
         if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
-            # Check for page number in the input
-            if "pagina" in user_input.lower():
+            # Direct page number input - check if it's just a number
+            if user_input.isdigit() and 208 <= int(user_input) <= 221:
+                st.session_state.current_page = int(user_input)
+            
+            # Check for page number in text input
+            elif "pagina" in user_input.lower():
                 page_nums = [int(s) for s in user_input.split() if s.isdigit() and 208 <= int(s) <= 221]
                 if page_nums:
                     st.session_state.current_page = page_nums[0]
             
             # Alternative detection for "maak pagina X" pattern
-            if "maak" in user_input.lower() and "pagina" in user_input.lower():
+            elif "maak" in user_input.lower() and "pagina" in user_input.lower():
                 page_nums = [int(s) for s in user_input.split() if s.isdigit() and 208 <= int(s) <= 221]
                 if page_nums:
                     st.session_state.current_page = page_nums[0]
-            
-            # Direct page number input
-            if user_input.isdigit() and 208 <= int(user_input) <= 221:
-                st.session_state.current_page = int(user_input)
         
         # Prepare prompt with context if needed
         if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
@@ -649,8 +686,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.current_page:
                 page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
                 
-                # Check if it's "alles" command
-                if user_input.lower().strip() == "alles":
+                # Als alleen een paginanummer is ingevoerd, geef automatisch alle antwoorden
+                if user_input.isdigit() and 208 <= int(user_input) <= 221:
                     complete_prompt = f"""
                     Context informatie:
                     {st.session_state.context}
@@ -658,29 +695,37 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Paginainhoud:
                     {page_content}
                     
-                    De leerling heeft "alles" getypt voor pagina {st.session_state.current_page}. 
+                    Format voorbeeld:
+                    {example_answer_format}
                     
-                    BELANGRIJK: Geef ALLEEN de ANTWOORDEN voor ALLE opgaven op deze pagina zonder enige uitleg. 
-                    GEEN kopjes met "Opgave X" - alleen het nummer (10a, 10b, etc.) en direct het antwoord.
+                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Geef alle antwoorden volgens het format voorbeeld.
+                    Format belangrijk:
+                    - Gebruik duidelijke kopjes met opdrachtnummers: "Opgave 10"
+                    - Vermeld kort de vraag bij elke opgave
+                    - Toon alle ingevulde tabellen volledig
+                    - Gebruik een vergelijkbaar format als het voorbeeld
                     
-                    Tabellen moeten volledig zijn ingevuld, maar zonder uitleg hoe je de waarden berekend hebt.
+                    Geef nu alle volledige antwoorden voor pagina {st.session_state.current_page}.
                     """
+                # Anders, gewoon de specifieke vraag beantwoorden
                 else:
-                    # Handle page selection or specific exercise
                     complete_prompt = f"""
                     Context informatie:
                     {st.session_state.context}
                     
                     Paginainhoud:
                     {page_content}
+                    
+                    Format voorbeeld:
+                    {example_answer_format}
                     
                     De leerling werkt aan pagina {st.session_state.current_page} en vraagt: "{user_input}"
                     
-                    Geef ALLEEN de antwoorden zonder uitleg. Als het om een specifieke opgave gaat, geef alleen het antwoord.
-                    Als de leerling iets anders vraagt, reageer kort en vraag of ze "alles" willen typen om alle antwoorden te zien.
+                    Beantwoord deze vraag volgens het format voorbeeld. Als het een specifiek opdrachtennummer betreft, 
+                    behandel dat specifieke nummer volledig.
                     """
             else:
-                # No page selected yet - extract from numeric input if possible
+                # No page selected yet - maar probeer het uit de input te halen
                 if user_input.isdigit() and 208 <= int(user_input) <= 221:
                     st.session_state.current_page = int(user_input)
                     page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
@@ -692,7 +737,17 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Paginainhoud:
                     {page_content}
                     
-                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Vraag in één korte zin of ze "alles" willen zien (alle antwoorden voor deze pagina).
+                    Format voorbeeld:
+                    {example_answer_format}
+                    
+                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Geef alle antwoorden volgens het format voorbeeld.
+                    Format belangrijk:
+                    - Gebruik duidelijke kopjes met opdrachtnummers: "Opgave 10"
+                    - Vermeld kort de vraag bij elke opgave
+                    - Toon alle ingevulde tabellen volledig
+                    - Gebruik een vergelijkbaar format als het voorbeeld
+                    
+                    Geef nu alle volledige antwoorden voor pagina {st.session_state.current_page}.
                     """
                 else:
                     # No page selected yet
