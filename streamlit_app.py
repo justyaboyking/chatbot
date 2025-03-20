@@ -335,6 +335,13 @@ if prompt:
         chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
         st.session_state.active_chat = chat_title
     
+    # Show user message immediately
+    st.rerun()
+
+# Handle AI response generation (after rerun with user message visible)
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    user_input = st.session_state.messages[-1]["content"]
+    
     try:
         # Configure the model
         model = genai.GenerativeModel(
@@ -348,7 +355,7 @@ if prompt:
             Context informatie:
             {st.session_state.context}
             
-            Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{prompt}" en volg exact de structuur uit de context:
+            Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{user_input}" en volg exact de structuur uit de context:
             
             1. Gebruik precies de secties zoals aangegeven in de context
             2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
@@ -357,7 +364,7 @@ if prompt:
             5. Zorg dat elke sectie apart en duidelijk leesbaar is
             """
         else:
-            complete_prompt = prompt
+            complete_prompt = user_input
         
         # Generate AI response with streaming
         with st.chat_message("assistant"):
@@ -381,6 +388,9 @@ if prompt:
     except Exception as e:
         # Handle errors
         st.error(f"Error: {str(e)}")
+        
+        # Add error message to chat
+        st.session_state.messages.append({"role": "assistant", "content": f"Er is een fout opgetreden: {str(e)}"})
     
     # Rerun to update UI with new messages
     st.rerun()
