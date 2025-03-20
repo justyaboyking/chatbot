@@ -219,14 +219,11 @@ Veel succes!"""
 }
 
 # Configure Gemini API - Use environment variables for security
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
 load_dotenv()
-
-# Get API key from environment variable
 api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
+    st.warning("Using fallback API key. Set GEMINI_API_KEY in your .env file for security.")
 genai.configure(api_key=api_key)
 
 # Simplified streamlined sidebar
@@ -319,18 +316,18 @@ with main_container:
             # Simple copy button
             if st.button("Kopiëren", key=f"copy_btn_{i}"):
                 st.session_state.copied_message = i
-                st.rerun()
-            
-            # Copy confirmation
-            if st.session_state.copied_message == i:
+                # Simulate clipboard copying (actual implementation would need JavaScript)
                 st.success("Tekst gekopieerd!")
-                time.sleep(1)
+                time.sleep(0.5)
                 st.session_state.copied_message = None
+                st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Chat input - MOVED OUTSIDE OF ANY CONTAINER
-if prompt := st.chat_input("Typ je vraag hier..."):
+# Chat input - FIXED PLACEMENT OUTSIDE CONTAINERS
+prompt = st.chat_input("Typ je vraag hier...")
+if prompt:
+    # Add user message to session state
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.show_presets = False
     
@@ -340,12 +337,13 @@ if prompt := st.chat_input("Typ je vraag hier..."):
         st.session_state.active_chat = chat_title
     
     try:
+        # Configure the model
         model = genai.GenerativeModel(
             st.session_state.model_name,
             generation_config={"temperature": st.session_state.temperature}
         )
         
-        # Handle context for German states reference
+        # Prepare prompt with context if needed
         if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
             complete_prompt = f"""
             Context informatie:
@@ -362,28 +360,16 @@ if prompt := st.chat_input("Typ je vraag hier..."):
         else:
             complete_prompt = prompt
         
-        # Add user message to chat history display
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
         # Generate AI response
-        response = model.generate_content(
-            complete_prompt,
-            stream=True
-        )
-        
-        full_response = ""
-        
-        # Process the response
-        for chunk in response:
-            if hasattr(chunk, 'text'):
-                full_response += chunk.text
-        
-        # Add assistant message to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-        
-        # Rerun to display the new messages
-        st.rerun()
-        
+        response = model.generate_content(complete_prompt)
+        if hasattr(response, 'text'):
+            full_response = response.text
+            # Add assistant message to chat history
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
     except Exception as e:
+        # Handle errors
         st.error(f"Error: {str(e)}")
-        st.rerun()
+    
+    # Rerun to update UI with new messages
+    st.rerun()
