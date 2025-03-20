@@ -1,7 +1,6 @@
 import streamlit as st 
 import google.generativeai as genai
 import time
-import io
 
 # Set page config
 st.set_page_config(
@@ -11,24 +10,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS with modern UI elements
+# Clean, minimal CSS
 st.markdown("""
 <style>
-    /* Dark theme base with cleaner design */
+    /* Modern clean theme */
     body {
         color: white;
         background-color: #0e1117;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Sidebar styling - cleaner look */
+    /* Clean sidebar */
     [data-testid="stSidebar"] {
         background-color: #1a1c24;
-        border-right: 1px solid rgba(42, 45, 54, 0.5);
-        padding-top: 0;
+        border-right: 1px solid rgba(42, 45, 54, 0.3);
     }
     
-    /* Sidebar header */
+    /* Improved typography */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3 {
@@ -37,33 +35,22 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* Chat history items */
-    .chat-history-item {
-        background-color: transparent;
-        border-radius: 0.5rem;
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        transition: all 0.2s ease;
+    /* Sleek chat messages */
+    [data-testid="stChatMessage"] {
+        background-color: #262730;
+        border-radius: 0.75rem;
+        margin: 0.75rem 0;
+        padding: 1rem;
+        border: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     
-    .chat-history-item:hover {
-        background-color: #2a2d36;
+    /* User message styling */
+    [data-testid="stChatMessage"][data-testid*="user"] {
+        background-color: #383b44;
     }
     
-    /* Sidebar sections */
-    .sidebar-section {
-        margin: 1.5rem 0;
-        border-top: 1px solid rgba(42, 45, 54, 0.5);
-        padding-top: 1rem;
-    }
-    
-    /* Fixed chat input at bottom - removing top border line */
+    /* Fixed chat input */
     [data-testid="stChatInput"] {
         position: fixed;
         bottom: 0;
@@ -74,57 +61,21 @@ st.markdown("""
         padding: 1rem 2rem;
         border-top: none;
         z-index: 99;
-        box-shadow: none;
     }
     
-    /* Chat container with proper spacing - adjusted for no topbar */
+    /* Chat container spacing */
     .chat-container {
-        margin-top: 20px; /* Reduced space since no topbar */
-        margin-bottom: 80px; /* Space for input box */
+        margin-top: 20px;
+        margin-bottom: 80px;
         padding: 1rem 2rem;
     }
     
-    /* Chat messages */
-    [data-testid="stChatMessage"] {
-        background-color: #262730;
-        border-radius: 0.75rem;
-        margin: 0.75rem 0;
-        padding: 1rem;
-        border: none;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        position: relative; /* For positioning copy button */
-    }
-    
-    /* User vs assistant messages */
-    [data-testid="stChatMessage"][data-testid*="user"] {
-        background-color: #383b44;
-    }
-    
-    /* Copy button styling using Streamlit buttons */
-    .copybutton {
-        margin-top: 5px;
-        text-align: right;
-    }
-    
-    /* Icons */
-    .icon {
-        margin-right: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-    }
-    
-    /* Collapsible sections */
-    .collapsible {
-        cursor: pointer;
-        padding: 0.5rem 0;
-    }
-    
-    /* Hide streamlit default elements */
+    /* Hide default streamlit elements */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Clean up button appearances */
+    /* Clean button styling */
     button[data-testid="baseButton-secondary"] {
         background-color: #404756 !important;
         color: white !important;
@@ -132,26 +83,21 @@ st.markdown("""
         border-radius: 0.25rem !important;
     }
     
-    /* Verbeterde Watermark Stijl */
+    /* Minimal watermark */
     .watermark {
         position: fixed;
-        bottom: 60px; /* Positie boven het invoerveld */
-        right: 20px; /* Rechts uitlijnen */
-        color: rgba(255, 255, 255, 0.5); /* Beter zichtbare witte tekst */
-        font-size: 14px; /* Goed leesbaar lettertype */
+        bottom: 60px;
+        right: 20px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
         z-index: 1000;
-        font-weight: 500; /* Semi-bold voor betere leesbaarheid */
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Schaduw voor leesbaarheid */
-        pointer-events: none; /* Zorgt ervoor dat de watermark niet klikbaar is */
-        transform: rotate(0deg); /* Recht (geen rotatie) */
-        background-color: rgba(0, 0, 0, 0.4); /* Donkere achtergrond voor betere leesbaarheid */
-        padding: 5px 10px; /* Wat padding */
-        border-radius: 4px; /* Afgeronde hoeken */
-        letter-spacing: 0.5px; /* Betere leesbaarheid */
+        pointer-events: none;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 5px 10px;
+        border-radius: 4px;
     }
 </style>
 
-<!-- Watermark met aangepaste tekst -->
 <div class="watermark">
     Made by Zakaria
 </div>
@@ -162,8 +108,6 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "context" not in st.session_state:
     st.session_state.context = ""
-if "user_presets" not in st.session_state:
-    st.session_state.user_presets = {}
 if "model_name" not in st.session_state:
     st.session_state.model_name = "gemini-1.5-flash"
 if "temperature" not in st.session_state:
@@ -175,7 +119,7 @@ if "active_chat" not in st.session_state:
 if "copied_message" not in st.session_state:
     st.session_state.copied_message = None
 
-# Define presets
+# Define presets - simplified to core content
 presets = {
     "duits deelstaten": {
         "content": """PowerPoint Präsentation / PowerPoint Presentatie
@@ -272,33 +216,22 @@ Veel succes!"""
     }
 }
 
-# Functie om tekst naar klembord te kopiëren
-def copy_to_clipboard(text, index):
-    st.session_state.copied_message = index
-    st.session_state.clipboard_text = text
-    return
-
 # Configure Gemini API
 genai.configure(api_key="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
 
-# Enhanced sidebar with modern design
+# Simplified streamlined sidebar
 with st.sidebar:
-    # New Chat Button (removed duplicate in the UI)
-    if st.button("Nieuwe Chat", key="new_chat_btn", help="Start een nieuwe chat"):
+    # New Chat Button
+    if st.button("Nieuwe Chat", key="new_chat_btn"):
         st.session_state.messages = []
         st.session_state.show_presets = True
         st.session_state.active_chat = None
-        # Reset context when starting new chat
         st.session_state.context = ""
         st.rerun()
     
-    # Remove the Recent Chats section completely
-    
-    # Collapsible Gems Section
+    # Essential sections only - Huiswerk section
     with st.expander("✨ Huiswerk", expanded=False):
-        st.markdown("### Huiswerk")
-        if st.button("Laden", key="gem_german_states", help="Laad Duitse Deelstaten Referentie"):
-            # Reset the context and messages to start a fresh chat
+        if st.button("Duits Deelstaten", key="gem_german_states"):
             st.session_state.messages = []
             st.session_state.context = presets["duits deelstaten"]["content"]
             st.session_state.messages.append({
@@ -309,9 +242,8 @@ with st.sidebar:
             st.session_state.active_chat = "Duitse Deelstaten Referentie"
             st.rerun()
     
-    # Collapsible AI Settings
+    # Minimal AI Settings
     with st.expander("🤖 AI Instellingen", expanded=False):
-        st.subheader("AI Model")
         model_options = {
             "Gemini 1.5 Flash": "gemini-1.5-flash",
             "Gemini 2.0 Flash Thinking": "gemini-2.0-flash-thinking-exp-01-21",
@@ -319,80 +251,35 @@ with st.sidebar:
         }
         
         selected_model = st.selectbox(
-            "Selecteer AI Model:",
+            "AI Model:",
             options=list(model_options.keys()),
             index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
         )
         st.session_state.model_name = model_options[selected_model]
         
-        st.subheader("Antwoordstijl")
-        temperature = st.slider(
+        st.session_state.temperature = st.slider(
             "Temperatuur:",
             min_value=0.0,
             max_value=1.0,
             value=st.session_state.temperature,
             step=0.1
         )
-        st.session_state.temperature = temperature
     
-    # Bottom section removed - keeping only Gems expander above
-    
-    # Context Management (moved from old design)
-    with st.expander("📄 Context Beheer", expanded=False):
-        # File uploader for PDF and Word documents
-        uploaded_file = st.file_uploader("Upload PDF of Word Document", type=["pdf", "docx"])
-        if uploaded_file is not None:
-            file_text = ""
-            if uploaded_file.name.lower().endswith("pdf"):
-                try:
-                    import PyPDF2
-                    reader = PyPDF2.PdfReader(uploaded_file)
-                    for page in reader.pages:
-                        file_text += page.extract_text() + "\n"
-                except ModuleNotFoundError:
-                    st.error("PyPDF2 is niet geïnstalleerd. Voeg het toe aan requirements.txt.")
-                except Exception as e:
-                    st.error(f"Fout bij het lezen van PDF: {str(e)}")
-            elif uploaded_file.name.lower().endswith("docx"):
-                try:
-                    import docx
-                    doc = docx.Document(uploaded_file)
-                    file_text = "\n".join([para.text for para in doc.paragraphs])
-                except ModuleNotFoundError:
-                    st.error("python-docx is niet geïnstalleerd. Voeg het toe aan requirements.txt.")
-                except Exception as e:
-                    st.error(f"Fout bij het lezen van Word document: {str(e)}")
-            if file_text:
-                if st.button("Laad bestandsinhoud in context"):
-                    st.session_state.context += "\n" + file_text
-                    st.success("Bestandsinhoud toegevoegd aan context.")
-                    st.rerun()
-        
-        # Text area to edit context
+    # Simplified context management
+    with st.expander("📄 Context", expanded=False):
         custom_context = st.text_area(
-            "Bewerk context:",
+            "Context:",
             value=st.session_state.context,
-            height=300,
-            key="custom_context"
+            height=200
         )
-        
-        # Save Preset functionality
-        if st.session_state.context.strip():
-            st.subheader("Opslaan als preset")
-            preset_name = st.text_input("Preset Naam:", key="new_preset_name")
-            if st.button("Preset Opslaan") and preset_name:
-                st.session_state.user_presets[preset_name] = st.session_state.context
-                st.success(f"Preset '{preset_name}' succesvol opgeslagen!")
-                st.rerun()
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Opslaan", key="save_context"):
+            if st.button("Opslaan"):
                 st.session_state.context = custom_context
                 st.success("Opgeslagen!")
         with col2:
-            if st.button("Wissen", key="clear_context"):
-                st.session_state["custom_context"] = ""
+            if st.button("Wissen"):
                 st.session_state.context = ""
                 st.rerun()
 
@@ -401,12 +288,10 @@ main_container = st.container()
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# Show presets if there are no messages or we're starting a new chat
+# Initial greeting
 if st.session_state.show_presets and not st.session_state.messages:
     with main_container:
-        # Start with a friendly greeting in Dutch WITHOUT accessing context
         st.session_state.messages = []
-        # Reset context when starting a new chat
         st.session_state.context = ""
         st.session_state.messages.append({
             "role": "assistant", 
@@ -419,20 +304,16 @@ if st.session_state.show_presets and not st.session_state.messages:
 with main_container:
     for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
-            # Toon de berichten normaal
             st.markdown(message["content"])
             
-            # Voeg een copy button toe onder elk bericht
-            col1, col2 = st.columns([0.9, 0.1])
-            with col2:
-                if st.button("Kopiëren", key=f"copy_btn_{i}"):
-                    copy_to_clipboard(message["content"], i)
-                    st.rerun()
+            # Simple copy button
+            if st.button("Kopiëren", key=f"copy_btn_{i}"):
+                st.session_state.copied_message = i
+                st.rerun()
             
-            # Toon een bevestiging als dit bericht is gekopieerd
+            # Copy confirmation
             if st.session_state.copied_message == i:
                 st.success("Tekst gekopieerd!")
-                # Reset copied_message na 1 seconde
                 time.sleep(1)
                 st.session_state.copied_message = None
     
@@ -444,7 +325,7 @@ with main_container:
         with st.chat_message("user"):
             st.markdown(prompt)
             
-        # If no active chat, create one based on first message
+        # Create active chat if none exists
         if not st.session_state.active_chat:
             chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
             st.session_state.active_chat = chat_title
@@ -455,8 +336,7 @@ with main_container:
                 generation_config={"temperature": st.session_state.temperature}
             )
             
-            # ALLEEN context gebruiken als de actieve chat "Duitse Deelstaten Referentie" is
-            # Controleer expliciet op actieve chat
+            # Handle context for German states reference
             if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
                 complete_prompt = f"""
                 Context informatie:
@@ -469,23 +349,8 @@ with main_container:
                 3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
                 4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
                 5. Zorg dat elke sectie apart en duidelijk leesbaar is
-                
-                Format de tekst zo:
-                
-                Algemene Informatie:
-                
-                Naam: [naam]
-                
-                Hoofdstad: [hoofdstad]
-                
-                Fläche: [oppervlakte]
-                
-                Einwohnerzahl: [inwoners]
-                
-                Enzovoort voor alle secties uit de context.
                 """
             else:
-                # Anders geen context gebruiken, gewoon de prompt verwerken
                 complete_prompt = prompt
             
             with st.chat_message("assistant"):
