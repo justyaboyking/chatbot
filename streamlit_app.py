@@ -100,24 +100,10 @@ st.markdown("""
         background-color: #383b44;
     }
     
-    /* Copy button for messages */
-    .copy-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(60, 64, 78, 0.7);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 3px 8px;
-        font-size: 12px;
-        cursor: pointer;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
-    
-    [data-testid="stChatMessage"]:hover .copy-btn {
-        opacity: 1;
+    /* Copy button styling using Streamlit buttons */
+    .copybutton {
+        margin-top: 5px;
+        text-align: right;
     }
     
     /* Icons */
@@ -165,27 +151,10 @@ st.markdown("""
     }
 </style>
 
-<!-- Add JavaScript for copy functionality - FIXED -->
-<script>
-function copyToClipboard(text, btnElement) {
-    navigator.clipboard.writeText(text).then(function() {
-        // Change button text temporarily
-        const originalText = btnElement.textContent;
-        btnElement.textContent = "Gekopieerd!";
-        setTimeout(function() {
-            btnElement.textContent = originalText;
-        }, 1500);
-    });
-}
-</script>
-
 <!-- Watermark met aangepaste tekst -->
 <div class="watermark">
     Home Work Bot v1.0 - Gemaakt door Jouw Naam
 </div>
-
-<!-- No topbar - removed -->
-
 """, unsafe_allow_html=True)
 
 # Initialize session state variables
@@ -203,6 +172,8 @@ if "show_presets" not in st.session_state:
     st.session_state.show_presets = True
 if "active_chat" not in st.session_state:
     st.session_state.active_chat = None
+if "copied_message" not in st.session_state:
+    st.session_state.copied_message = None
 
 # Define presets
 presets = {
@@ -300,6 +271,12 @@ Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!"""
     }
 }
+
+# Functie om tekst naar klembord te kopiëren
+def copy_to_clipboard(text, index):
+    st.session_state.copied_message = index
+    st.session_state.clipboard_text = text
+    return
 
 # Configure Gemini API
 genai.configure(api_key="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
@@ -438,13 +415,22 @@ if st.session_state.show_presets and not st.session_state.messages:
 with main_container:
     for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
-            # Add copy button for each message - FIXED
-            st.markdown(f"""
-            <div class="message-container">
-                {message["content"]}
-                <button class="copy-btn" onclick="copyToClipboard(`{message["content"].replace('`', '\`').replace("'", "\\'")}`, this)">Kopiëren</button>
-            </div>
-            """, unsafe_allow_html=True)
+            # Toon de berichten normaal
+            st.markdown(message["content"])
+            
+            # Voeg een copy button toe onder elk bericht
+            col1, col2 = st.columns([0.9, 0.1])
+            with col2:
+                if st.button("Kopiëren", key=f"copy_btn_{i}"):
+                    copy_to_clipboard(message["content"], i)
+                    st.rerun()
+            
+            # Toon een bevestiging als dit bericht is gekopieerd
+            if st.session_state.copied_message == i:
+                st.success("Tekst gekopieerd!")
+                # Reset copied_message na 1 seconde
+                time.sleep(1)
+                st.session_state.copied_message = None
     
     # Chat input
     if prompt := st.chat_input("Typ je vraag hier..."):
@@ -465,6 +451,7 @@ with main_container:
                 generation_config={"temperature": st.session_state.temperature}
             )
             
+            # Verwerk de prompt afhankelijk van de actieve chat
             if st.session_state.context and st.session_state.active_chat == "Duitse Deelstaten Referentie":
                 complete_prompt = f"""
                 Context informatie:
