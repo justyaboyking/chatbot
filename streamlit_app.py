@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import time
 import os
+import base64
 from dotenv import load_dotenv
 
 # Set page config
@@ -105,6 +106,124 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Define function to get encoded images for each page
+def get_page_images():
+    # Dictionary of encoded page images for embedding
+    page_images = {
+        # For each page in the workbook, we'll store base64 encoded image data
+        # This is just an example with synthetic data - you would need to add the actual images
+        208: """
+        Pagina 208 bevat de volgende opgaven:
+        
+        10. Het verband tussen het aantal en de kostprijs (in euro) is lineair.
+        Vul de ontbrekende waarden in de tabel aan.
+        
+        11. Je koopt een aantal van de onderstaande producten.
+        
+        12. Vul de tabel aan met behulp van de formules.
+        12a. p = 4 x z
+        12b. p = 10 + (2 x t)
+        12c. p = d x 3,14
+        
+        13. Het lineair verband tussen de temperatuur [T] en de tijd [t] is telkens met tabellen
+        voorgesteld.
+        """,
+        
+        209: """
+        Pagina 209 bevat de volgende opgaven:
+        
+        13. (vervolg)
+        13b. Welke tabel past bij welke formule?
+        13c. Welke tabel past bij welke grafiek?
+        13d. Bij welke tabel merk je een stijgend lineair verband?
+        Bij welke tabel merk je een dalend lineair verband?
+        Bij welke tabel merk je een constant lineair verband?
+        """,
+        
+        210: """
+        Pagina 210 bevat de volgende opgaven:
+        
+        14. Het verband tussen de massa [in kilogram] en de kostprijs [in euro] is lineair.
+        Vul de ontbrekende waarden in de tabel aan.
+        
+        15. Het verband tussen de tijd [in uur] en de kostprijs [in euro] is lineair.
+        Vul de ontbrekende waarden in de tabel aan.
+        """,
+        
+        211: """
+        Pagina 211 bevat de volgende opgaven:
+        
+        16. Het verband tussen de tijd [in weken] en de massa [in kilogram] is lineair.
+        Vul de ontbrekende waarden in de tabel aan.
+        
+        17. Vul de tabel aan met behulp van de formules.
+        17a. z = 35 x t
+        17b. h = 100 - (5 x u)
+        17c. k = 7,5 + (0,5 x m)
+        """,
+        
+        212: """
+        Pagina 212 bevat de volgende opgaven:
+        
+        18. Stel het verband tussen het aantal drankjes en het bedrag voor met een tabel.
+        Welke formule heb je gebruikt om het bedrag te berekenen? Vul aan.
+        Merk je een stijgend, dalend of constant verband? Duid aan.
+        """
+    }
+    
+    # Simplified content for the remaining pages
+    for page_num in range(213, 222):
+        page_images[page_num] = f"""
+        Pagina {page_num} bevat verschillende wiskundeopgaven over lineaire verbanden, 
+        formules, tabellen en grafieken. De opdrachten hebben vaak meerdere deelvragen
+        genummerd met letters (a, b, c, d, etc.).
+        """
+    
+    # Add more detailed information for specific pages
+    page_images[218] = """
+    Pagina 218 bevat de volgende opgaven:
+    
+    30. Twee cilindervorming kaarsen branden gelijkmatig op.
+    Het lineair verband tussen de lengte [l] in cm en de tijd [t] in uren
+    van die twee kaarsen is hieronder grafisch voorgesteld.
+    
+    a. Welke grafiek hoort bij de dikste kaars?
+    b. Waarom denk je dat?
+    c. Je steekt beide kaarsen tegelijkertijd aan.
+       Na hoeveel uur is de dunne kaars even hoog als de dikkere kaars?
+    d. Welke formule past bij de dunste kaars?
+    e. Hoelang duurt het om de dikste kaars 10 cm op te branden?
+    
+    31. Twee taxibedrijven berekenen hun prijs op een verschillende manier.
+    Bedrijf A gebruikt de formule: prijs = € 2,50 x aantal km + € 3,10.
+    Bedrijf B gebruikt de formule: prijs = € 2,30 x aantal km + € 5,50.
+    
+    a. Welk bedrijf is het goedkoopst voor een rit van 7 km?
+    b. Je moet 20 km naar huis. Welke bedrijf kies je?
+    c. Bij welk aantal gereden kilometer zijn beide bedrijven even duur?
+       Maak gebruik van ICT om de oplossing te vinden.
+    d. Hoeveel moet je dan betalen?
+    """
+    
+    page_images[219] = """
+    Pagina 219 bevat de volgende opgaven:
+    
+    32. Tuiniersbedrijf VABI rekent voor het onderhoud van een tuin € 75 plus € 3,45 per m².
+    
+    a. Wat kost het onderhoud van een tuin van 380 m²?
+    b. Mevrouw Lesage heeft een tuin van 12 a 75 ca. Hoeveel zal ze moeten betalen?
+    c. Meneer Vanhee heeft zijn tuin laten opknappen. Hij kreeg een rekening van 2.638,35 euro.
+       Hoe groot is de tuin van meneer Vanhee?
+    
+    33. De vrachtwagen van Yasin heeft 45 liter brandstof verbruikt na 250 km.
+    
+    a. Hoeveel liter brandstof verbruikt de vrachtwagen om 100 km af te leggen?
+    b. In de brandstoftank van de vrachtwagen kan 500 liter. Hoeveel kilometer kan Yasin daarmee rijden?
+       Rond af op de eenheid.
+    """
+    
+    return page_images
+
 # Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -122,6 +241,49 @@ if "copied_message" not in st.session_state:
     st.session_state.copied_message = None
 if "current_page" not in st.session_state:
     st.session_state.current_page = None
+if "page_images" not in st.session_state:
+    st.session_state.page_images = get_page_images()
+
+# Define wiskunde prompt
+wiskunde_prompt = """# Wiskunde Huiswerk Helper Prompt
+
+Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen van Nederlandse wiskundeproblemen voor middelbare scholieren. Je helpt leerlingen met hun wiskunde huiswerk door duidelijke, stapsgewijze uitleg te geven van de opgaven.
+
+## Instructies:
+
+1. Als de leerling "alles" typt, geef dan volledige oplossingen voor ALLE opdrachten op de huidige pagina, opgesplitst per opdracht en deelvraag met duidelijke tussenkopjes.
+
+2. Als de leerling een specifiek paginanummer noemt, switch dan naar die pagina en beschrijf kort welke opdrachten er op die pagina staan.
+
+3. Voor elke opdracht waar de leerling om vraagt:
+   - Lees de vraag zorgvuldig
+   - Geef een volledige, stapsgewijze oplossing
+   - Leg de wiskundige concepten duidelijk uit
+   - Toon alle berekeningen
+   - Presenteer het antwoord in de vorm zoals het werkboek verwacht
+
+4. Focus op de volgende onderwerpen die in het werkboek voorkomen:
+   - Lineaire verbanden
+   - Formules en vergelijkingen
+   - Grafieken interpreteren en opstellen
+   - Tabellen invullen
+   - Toepassingsproblemen (kosten, tijd, afstand, etc.)
+   - Stijgende, dalende of constante verbanden
+
+5. Gebruik de juiste Nederlandse wiskundige terminologie.
+
+6. Als er meerdere vragen op een pagina staan (a, b, c, d, etc.), behandel ze dan één voor één en markeer duidelijk welke vraag je beantwoordt.
+
+7. Als een tabel moet worden ingevuld, maak dan een duidelijke tabel met alle berekende waarden.
+
+8. Voor grafiekvragen, leg uit welke grafiek bij welke formule hoort en waarom.
+
+9. Blijf vriendelijk, geduldig en begrijpend, maar blijf altijd in het Nederlands antwoorden.
+
+10. Als een vraag extra uitleg nodig heeft, geef dan aanvullende context over het wiskundige concept.
+
+Herinner je: het doel is om de leerling te helpen de stof te begrijpen, niet alleen de antwoorden te geven.
+"""
 
 # Define presets
 presets = {
@@ -219,64 +381,7 @@ Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!"""
     },
     "wiskunde huiswerk": {
-        "content": """# Wiskunde Huiswerk Helper Prompt
-
-Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen van Nederlandse wiskundeproblemen voor middelbare scholieren. Je helpt leerlingen met hun wiskunde huiswerk door duidelijke, stapsgewijze uitleg te geven van de opgaven.
-
-## Instructies:
-
-1. Begin door de leerling te vragen: "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
-
-2. Zodra de leerling een paginanummer of bereik opgeeft, identificeer je de specifieke opdrachten op die pagina's.
-
-3. Voor elke opdracht:
-   - Lees de vraag zorgvuldig
-   - Geef een volledige, stapsgewijze oplossing
-   - Leg de wiskundige concepten duidelijk uit
-   - Toon alle berekeningen
-   - Presenteer het antwoord in de vorm zoals het werkboek verwacht
-
-4. Focus op de volgende onderwerpen die in het werkboek voorkomen:
-   - Lineaire verbanden
-   - Formules en vergelijkingen
-   - Grafieken interpreteren en opstellen
-   - Tabellen invullen
-   - Toepassingsproblemen (kosten, tijd, afstand, etc.)
-   - Stijgende, dalende of constante verbanden
-
-5. Gebruik de juiste Nederlandse wiskundige terminologie.
-
-6. Als er meerdere vragen op een pagina staan (a, b, c, d, etc.), behandel ze dan één voor één en markeer duidelijk welke vraag je beantwoordt.
-
-7. Als een tabel moet worden ingevuld, maak dan een duidelijke tabel met alle berekende waarden.
-
-8. Voor grafiekvragen, leg uit welke grafiek bij welke formule hoort en waarom.
-
-9. Blijf vriendelijk, geduldig en begrijpend, maar blijf altijd in het Nederlands antwoorden.
-
-10. Als een vraag extra uitleg nodig heeft, geef dan aanvullende context over het wiskundige concept.
-
-Herinner je: het doel is om de leerling te helpen de stof te begrijpen, niet alleen de antwoorden te geven.
-
-## Pagina Informatie
-
-De werkboekpagina's 208-221 bevatten opgaven over de volgende onderwerpen:
-- Lineaire verbanden
-- Formules opstellen en toepassen
-- Grafieken interpreteren en analyseren 
-- Tabellen invullen en verbanden bepalen
-- Toepassingsproblemen met kosten, tijd, afstand, etc.
-
-Er zijn verschillende opdrachten zoals:
-- Opdracht 10-13: Lineaire verbanden tussen variabelen
-- Opdracht 14-17: Tabellen invullen met formules
-- Opdracht 18-21: Grafieken en formules koppelen
-- Opdracht 22-25: Toepassingen met prijzen, afstanden en tijd
-- Opdracht 26-29: Verbanden tussen verschillende variabelen
-- Opdracht 30-33: Toepassingen met groei, kosten en brandstof
-
-Elk opdrachtnummer kan deelvragen hebben (a, b, c, d, etc.) die je per stuk moet beantwoorden.
-"""
+        "content": wiskunde_prompt
     }
 }
 
@@ -295,6 +400,7 @@ with st.sidebar:
         st.session_state.show_presets = True
         st.session_state.active_chat = None
         st.session_state.context = ""
+        st.session_state.current_page = None
         st.rerun()
     
     # Homework sections
@@ -340,9 +446,11 @@ with st.sidebar:
             
             if selected_page != st.session_state.current_page:
                 st.session_state.current_page = selected_page
+                
+                # Add the page selection message to the chat history
                 st.session_state.messages.append({
                     "role": "user", 
-                    "content": f"Ik wil graag aan pagina {selected_page} werken"
+                    "content": f"maak pagina {selected_page}"
                 })
                 st.rerun()
     
@@ -447,6 +555,29 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             generation_config={"temperature": st.session_state.temperature}
         )
         
+        # Check if user is requesting a specific page in Wiskunde mode
+        if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
+            # Check for page selection command
+            if "pagina" in user_input.lower():
+                try:
+                    import re
+                    page_nums = re.findall(r'\d+', user_input)
+                    if page_nums:
+                        page_num = int(page_nums[0])
+                        if 208 <= page_num <= 221:
+                            st.session_state.current_page = page_num
+                except:
+                    pass
+            
+            # Check for "maak pagina X" or "maken pagina X" pattern
+            if re.search(r'maak(?:en)?\s+pagina\s+\d+', user_input.lower()):
+                try:
+                    page_num = int(re.findall(r'\d+', user_input)[0])
+                    if 208 <= page_num <= 221:
+                        st.session_state.current_page = page_num
+                except:
+                    pass
+        
         # Prepare prompt with context if needed
         if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
             complete_prompt = f"""
@@ -462,49 +593,71 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             5. Zorg dat elke sectie apart en duidelijk leesbaar is
             """
         elif st.session_state.active_chat == "Wiskunde Huiswerk Helper" and st.session_state.context:
-            # Check if user input contains a page number reference
-            page_mention = any(str(p) in user_input for p in range(208, 222))
-            
-            if "pagina" in user_input.lower() and not page_mention:
-                # Try to extract page number
-                try:
-                    import re
-                    page_nums = re.findall(r'\d+', user_input)
-                    if page_nums:
-                        page_num = int(page_nums[0])
-                        if 208 <= page_num <= 221:
-                            st.session_state.current_page = page_num
-                except:
-                    pass
-            
             if st.session_state.current_page:
-                complete_prompt = f"""
-                Context informatie:
-                {st.session_state.context}
+                page_content = st.session_state.page_images.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
                 
-                De leerling werkt nu aan pagina {st.session_state.current_page} van het wiskunde werkboek en stelt de volgende vraag:
-                "{user_input}"
-                
-                Beantwoord deze vraag volgens de volgende richtlijnen:
-                1. Geef een stapsgewijze uitleg in duidelijk Nederlands
-                2. Toon alle berekeningen en tussenresultaten
-                3. Leg de wiskundige concepten helder uit
-                4. Focus op het helpen van de leerling om het concept te begrijpen
-                5. Als het een specifieke opdracht betreft, behandel deze volledig
-                6. Bij tabellen of grafieken, geef een duidelijke uitleg van de relatie
-                7. Houd de uitleg bondig maar volledig
-                
-                Als de vraag onduidelijk is of meer context nodig heeft, vraag dan om verduidelijking.
-                """
+                # Check if it's "alles" command
+                if user_input.lower().strip() == "alles":
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling heeft "alles" gevraagd voor pagina {st.session_state.current_page}. Geef een complete uitwerking van ALLE opgaven op deze pagina. 
+                    Behandel elke opgave en deelvraag afzonderlijk met duidelijke tussenkopjes. Geef voor elke opgave:
+                    
+                    1. De opgavetekst
+                    2. Een stapsgewijze uitwerking met alle berekeningen
+                    3. Het eindantwoord duidelijk gemarkeerd
+                    
+                    Maak het echt volledig en uitgebreid, zonder stappen over te slaan.
+                    """
+                elif "maak" in user_input.lower() and "pagina" in user_input.lower():
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling vraagt om pagina {st.session_state.current_page} te behandelen. Geef een overzicht van alle opgaven op deze pagina, en vraag aan de leerling 
+                    welke specifieke opgave(n) ze willen behandelen. Bijvoorbeeld: "Opdracht 10a, 10b, 11, 12a" of "alles" voor alle opgaven op de pagina.
+                    """
+                else:
+                    # Handle specific exercise requests
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling werkt aan pagina {st.session_state.current_page} en vraagt: "{user_input}"
+                    
+                    Beantwoord deze vraag volgens de volgende richtlijnen:
+                    1. Als het een specifieke opdracht betreft (zoals "10a" of "opgave 12"), behandel deze volledig 
+                    2. Geef een stapsgewijze uitleg in duidelijk Nederlands
+                    3. Toon alle berekeningen en tussenresultaten
+                    4. Leg de wiskundige concepten helder uit
+                    5. Focus op het helpen van de leerling om het concept te begrijpen
+                    6. Bij tabellen of grafieken, geef een duidelijke uitleg van de relatie
+                    7. Houd de uitleg bondig maar volledig
+                    
+                    Als er specifieke opdrachtennummers worden genoemd, behandel die exact en volledig.
+                    """
             else:
+                # No page selected yet
                 complete_prompt = f"""
                 Context informatie:
                 {st.session_state.context}
                 
-                De leerling heeft nog geen specifieke pagina geselecteerd en stelt de volgende vraag:
-                "{user_input}"
+                De leerling heeft nog geen specifieke pagina geselecteerd en vraagt: "{user_input}"
                 
-                Help de leerling met deze vraag of vraag om een specifiek paginanummer tussen 208-221 om gerichter te kunnen helpen.
+                Controleer eerst of de leerling een paginanummer noemt (tussen 208-221). 
+                Zo ja, focus op die pagina. Zo nee, vraag de leerling om een paginanummer te selecteren 
+                uit het bereik 208-221, of gebruik de dropdown in het zijpaneel.
                 """
         else:
             complete_prompt = user_input
