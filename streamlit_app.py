@@ -339,8 +339,53 @@ def get_page_content():
         """
     }
     
+    # Pagina's 220-221 toevoegen
+    page_content[220] = """
+    Pagina 220 bevat de volgende opgaven:
+    
+    34. Als je een nieuwe diepvriezer koopt, heeft het toestel de kamertemperatuur van 20 °C aangenomen.
+    Pas na het aansluiten begint de temperatuur (T) te dalen volgens de formule T = 20 - (5 x t),
+    waarbij t het aantal uren voorstelt.
+    
+    a. Vul de tabel met het verband tussen de temperatuur en de tijd aan.
+       
+       tijd (t) in uur | 0 | 1 | 2 | 3 | 4
+       temperatuur (T) in °C | | | | | 
+    
+    b. Na hoeveel uur is het vriespunt bereikt?
+    
+    c. Na hoeveel uur is een temperatuur van -10 °C bereikt?
+    
+    35. In een thermometer bestaat het gekleurde staafje uit een vloeistof.
+    De hoogte (h) van de vloeistof neemt toe als de temperatuur T (in °C) stijgt.
+    De hoogte van de vloeistof in cm kun je berekenen met de formule h = 3,3 + (T x 0,068).
+    
+    a. Wat is de hoogte van de vloeistof als het 20 °C is?
+    
+    b. Bij welke temperatuur is de hoogte van de vloeistof 6 cm?
+    Rond af op één cijfer na de komma.
+    """
+    
+    page_content[221] = """
+    Pagina 221 bevat de volgende opgaven:
+    
+    36. Met een microgolfoven kun je ingevroren voeding ontdooien en opwarmen. De tijd die daarvoor nodig is,
+    hangt af van de massa van het voedingsproduct.
+    De tijd dat het duurt om 0,5 liter soep te ontdooien en op te warmen wordt bepaald door de formule
+    T = -20 + (8 x t), waarbij t de tijd is in minuten en T de temperatuur in °C.
+    
+    a. Vul de tabel met het verband tussen de temperatuur en de tijd aan.
+       
+       tijd (t) in minuten | 0 | 1 | 2 | 3 | 4
+       temperatuur (T) in °C | | | | | 
+    
+    b. Na hoeveel minuten en seconden is het vriespunt (0 °C) bereikt?
+    
+    c. Na hoeveel minuten en seconden is de soep 30 °C?
+    """
+    
     # Simplified content for the remaining pages
-    for page_num in range(213, 222):
+    for page_num in range(213, 220):
         page_content[page_num] = f"""
         Pagina {page_num} bevat verschillende wiskundeopgaven over lineaire verbanden, 
         formules, tabellen en grafieken. 
