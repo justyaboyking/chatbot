@@ -1,6 +1,8 @@
 import streamlit as st 
 import google.generativeai as genai
 import time
+import os
+from dotenv import load_dotenv
 
 # Set page config
 st.set_page_config(
@@ -216,8 +218,16 @@ Veel succes!"""
     }
 }
 
-# Configure Gemini API
-genai.configure(api_key="AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w")
+# Configure Gemini API - Use environment variables for security
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get API key from environment variable
+api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 
 # Simplified streamlined sidebar
 with st.sidebar:
