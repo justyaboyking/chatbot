@@ -153,7 +153,7 @@ st.markdown("""
 
 <!-- Watermark met aangepaste tekst -->
 <div class="watermark">
-    Home Work Bot v1.0 - Gemaakt door Jouw Naam
+    Made by Zakaria
 </div>
 """, unsafe_allow_html=True)
 
