@@ -300,6 +300,11 @@ st.markdown("""
         border-radius: 4px !important;
         font-size: 0.9em !important;
     }
+    
+    /* Hide buttons container */
+    .hidden-buttons {
+        display: none !important;
+    }
 </style>
 
 <!-- Simple JavaScript for copy functionality -->
@@ -340,6 +345,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial check
     addCopyButtons();
+    
+    // Handle subject card clicks
+    const subjectCards = document.querySelectorAll('.subject-card');
+    subjectCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const subjectKey = this.getAttribute('data-subject');
+            if (subjectKey) {
+                const button = document.querySelector(`button[data-subject="${subjectKey}"]`);
+                if (button) button.click();
+            }
+        });
+    });
 });
 </script>
 
@@ -437,7 +454,7 @@ with st.sidebar:
     # Generate subject cards dynamically
     for key, subject in subjects.items():
         html = f"""
-        <div class="subject-card {subject['class']}" onclick="document.getElementById('btn_{key}').click()">
+        <div class="subject-card {subject['class']}" data-subject="{key}">
             <div class="icon">{subject['icon']}</div>
             <div class="content">
                 <div class="title">{subject['title']}</div>
@@ -446,10 +463,13 @@ with st.sidebar:
         </div>
         """
         st.markdown(html, unsafe_allow_html=True)
-        
-        # Hidden button for actual click handling
-        if st.button(key, key=f"btn_{key}", help=f"Select {subject['title']}", label_visibility="collapsed"):
-            set_subject(key)
+    
+    # Create hidden buttons for the subject selection
+    st.markdown('<div class="hidden-buttons">', unsafe_allow_html=True)
+    for key, subject in subjects.items():
+        if st.button(f"Select {subject['title']}", key=f"btn_{key}", args=(key,), on_click=set_subject):
+            pass  # The on_click handles the action
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
