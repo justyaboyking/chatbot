@@ -7,50 +7,157 @@ from dotenv import load_dotenv
 
 # Set page config
 st.set_page_config(
-    page_title="Home Work Bot",
-    page_icon="📚",
+    page_title="Wiskunde Assistant",
+    page_icon="📐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Clean, minimal CSS
+# Advanced CSS with animations and professional styling
 st.markdown("""
 <style>
-    /* Modern clean theme */
+    /* === FONTS === */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* === BASE STYLES === */
     body {
         color: white;
         background-color: #0e1117;
         font-family: 'Inter', sans-serif;
+        transition: all 0.3s ease;
     }
     
-    /* Clean sidebar */
+    /* === SIDEBAR STYLING === */
     [data-testid="stSidebar"] {
-        background-color: #1a1c24;
-        border-right: 1px solid rgba(42, 45, 54, 0.3);
+        background: linear-gradient(180deg, #1a1c24 0%, #13151c 100%);
+        border-right: 1px solid rgba(42, 45, 54, 0.5);
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
     }
     
-    /* Improved typography */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        padding-top: 1.5rem;
+    }
+    
+    /* Sidebar headers */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3 {
         color: white;
         padding: 0.5rem 0;
-        font-weight: 500;
+        font-weight: 600;
+        letter-spacing: 0.01em;
     }
     
-    /* Sleek chat messages */
-    [data-testid="stChatMessage"] {
-        background-color: #262730;
-        border-radius: 0.75rem;
-        margin: 0.75rem 0;
-        padding: 1rem;
+    /* Sidebar dividers */
+    .sidebar-divider {
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin: 1rem 0;
+    }
+    
+    /* Sidebar buttons */
+    .sidebar-button {
+        background: linear-gradient(90deg, #3a7bd5 0%, #2b5876 100%);
         border: none;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        padding: 10px 15px;
+        margin: 5px 0;
+        text-align: center;
+        transition: all 0.3s ease;
+        width: 100%;
+        cursor: pointer;
+        display: block;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .sidebar-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .sidebar-button-secondary {
+        background: linear-gradient(90deg, #4b6cb7 0%, #253546 100%);
+    }
+    
+    /* Custom expander styling */
+    [data-testid="stExpander"] {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        background-color: rgba(20, 22, 30, 0.3);
+    }
+    
+    [data-testid="stExpander"] > details > summary {
+        padding: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    [data-testid="stExpander"] > details > summary:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+    
+    [data-testid="stExpander"] > details > summary::before {
+        content: "↓";
+        margin-right: 0.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    [data-testid="stExpander"] > details[open] > summary::before {
+        content: "↓";
+        transform: rotate(180deg);
+    }
+    
+    [data-testid="stExpander"] > details > div {
+        padding: 1rem;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    /* === CHAT STYLING === */
+    /* Modern chat message container */
+    [data-testid="stChatMessage"] {
+        background-color: #23252f;
+        border-radius: 12px;
+        margin: 0.9rem 0;
+        padding: 1.2rem;
+        border: none;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+        animation: fadeInUp 0.3s ease;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
     }
     
     /* User message styling */
     [data-testid="stChatMessage"][data-testid*="user"] {
-        background-color: #383b44;
+        background-color: #2a304a;
+        border-left: 4px solid #4168e4;
+    }
+    
+    /* AI message styling */
+    [data-testid="stChatMessage"][data-testid*="assistant"] {
+        background-color: #293042;
+        border-left: 4px solid #38b6ff;
+    }
+    
+    /* Chat message animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     
     /* Fixed chat input */
@@ -59,54 +166,139 @@ st.markdown("""
         bottom: 0;
         left: 20%;
         right: 0;
-        background-color: rgba(14, 17, 23, 0.95);
-        backdrop-filter: blur(5px);
-        padding: 1rem 2rem;
+        background: linear-gradient(180deg, rgba(14, 17, 23, 0) 0%, rgba(14, 17, 23, 0.95) 20%);
+        backdrop-filter: blur(10px);
+        padding: 1.5rem 2rem;
         border-top: none;
         z-index: 99;
+    }
+    
+    /* Chat input field */
+    [data-testid="stChatInput"] textarea {
+        background-color: rgba(35, 37, 47, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 15px;
+        transition: all 0.3s;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    [data-testid="stChatInput"] textarea:focus {
+        background-color: rgba(35, 37, 47, 1);
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 2px rgba(56, 182, 255, 0.2);
     }
     
     /* Chat container spacing */
     .chat-container {
         margin-top: 20px;
-        margin-bottom: 80px;
+        margin-bottom: 100px;
         padding: 1rem 2rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
+    /* === UTILITY STYLES === */
     /* Hide default streamlit elements */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Clean button styling */
-    button[data-testid="baseButton-secondary"] {
-        background-color: #404756 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 0.25rem !important;
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
     }
     
-    /* Minimal watermark */
-    .watermark {
-        position: fixed;
-        bottom: 60px;
-        right: 20px;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 14px;
-        z-index: 1000;
-        pointer-events: none;
-        background-color: rgba(0, 0, 0, 0.4);
-        padding: 5px 10px;
-        border-radius: 4px;
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 34, 44, 0.2);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(106, 116, 143, 0.5);
+        border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(106, 116, 143, 0.8);
     }
     
     /* Thinking animation */
+    .thinking-container {
+        display: flex;
+        align-items: center;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, #293042 0%, #324155 100%);
+        border-radius: 12px;
+        margin: 12px 0;
+        width: fit-content;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        border-left: 4px solid #5e87f5;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(94, 135, 245, 0.3);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(94, 135, 245, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(94, 135, 245, 0);
+        }
+    }
+    
+    .thinking-icon {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        background: rgba(94, 135, 245, 0.3);
+        border-radius: 50%;
+        position: relative;
+        animation: iconPulse 1.5s infinite;
+    }
+    
+    @keyframes iconPulse {
+        0% { transform: scale(0.95); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(0.95); }
+    }
+    
+    .thinking-icon::before,
+    .thinking-icon::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(94, 135, 245, 0.4);
+        transform: translate(-50%, -50%);
+    }
+    
+    .thinking-icon::after {
+        width: 8px;
+        height: 8px;
+        background: rgba(94, 135, 245, 0.8);
+    }
+    
+    .thinking-text {
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        margin-right: 8px;
+    }
+    
     .thinking-dots {
         display: inline-block;
-        margin-left: 4px;
     }
+    
     .thinking-dots span {
-        animation: thinking 1.4s infinite;
+        animation: dot 1.4s infinite;
         animation-fill-mode: both;
         display: inline-block;
         width: 6px;
@@ -115,44 +307,208 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.8);
         margin-right: 4px;
     }
+    
     .thinking-dots span:nth-child(2) {
         animation-delay: 0.2s;
     }
+    
     .thinking-dots span:nth-child(3) {
         animation-delay: 0.4s;
     }
-    @keyframes thinking {
+    
+    @keyframes dot {
         0%, 80%, 100% { opacity: 0; transform: scale(0.6); }
         40% { opacity: 1; transform: scale(1); }
     }
     
-    .thinking-container {
+    /* Copy button styling */
+    .copy-button {
+        background: rgba(94, 135, 245, 0.2);
+        border: 1px solid rgba(94, 135, 245, 0.4);
+        color: rgba(255, 255, 255, 0.9);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 10px;
+    }
+    
+    .copy-button:hover {
+        background: rgba(94, 135, 245, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .copy-button svg {
+        margin-right: 5px;
+        width: 14px;
+        height: 14px;
+    }
+    
+    .copy-success {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(46, 125, 50, 0.9);
+        color: white;
+        padding: 10px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+        animation: slideInRight 0.3s ease, fadeOut 0.5s ease 2s forwards;
         display: flex;
         align-items: center;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+    
+    /* Brand logo */
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
         padding: 10px 15px;
-        background-color: #2a2d36;
-        border-radius: 15px 15px 15px 0;
-        margin: 10px 0;
-        width: fit-content;
+        background: linear-gradient(135deg, #1a1c24 0%, #13151c 100%);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
-    .thinking-icon {
-        display: inline-block;
-        width: 24px;
-        height: 24px;
-        margin-right: 8px;
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        animation: pulse 1.5s infinite;
+    
+    .logo-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 10px;
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
     }
-    @keyframes pulse {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
-        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
-        100% { transform: scale(0.95); }
+    
+    .logo-text {
+        font-size: 18px;
+        font-weight: 600;
+        background: linear-gradient(90deg, #eef2f3, #8e9eab);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* App watermark */
+    .watermark {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 12px;
+        z-index: 1000;
+        pointer-events: none;
+        background-color: rgba(0, 0, 0, 0.2);
+        padding: 5px 10px;
+        border-radius: 6px;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+    }
+    
+    .watermark svg {
+        width: 14px;
+        height: 14px;
+        margin-right: 5px;
+        opacity: 0.7;
     }
 </style>
 
+<!-- Copy Success Notification (Hidden by default) -->
+<div id="copySuccess" class="copy-success" style="display: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px;">
+        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+    </svg>
+    Tekst gekopieerd!
+</div>
+
+<!-- Clipboard.js for better copy functionality -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+
+<!-- Custom JavaScript for copy functionality and animations -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize clipboard functionality for all copy buttons
+    const clipboard = new ClipboardJS('.copy-btn');
+    
+    clipboard.on('success', function() {
+        const successEl = document.getElementById('copySuccess');
+        successEl.style.display = 'flex';
+        
+        // Hide the notification after 2 seconds
+        setTimeout(function() {
+            successEl.style.display = 'none';
+        }, 2500);
+    });
+    
+    // Function to create copy buttons for each message
+    function addCopyButtons() {
+        const messages = document.querySelectorAll('[data-testid="stChatMessage"]');
+        
+        messages.forEach((message, index) => {
+            // Only add if button doesn't already exist
+            if (!message.querySelector('.copy-button')) {
+                const content = message.textContent;
+                
+                // Create button
+                const btn = document.createElement('button');
+                btn.className = 'copy-button copy-btn';
+                btn.setAttribute('data-clipboard-text', content);
+                
+                // Add SVG icon
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                    Kopiëren
+                `;
+                
+                // Add button to message
+                message.appendChild(btn);
+            }
+        });
+    }
+    
+    // Add copy buttons initially and when messages change
+    addCopyButtons();
+    
+    // Check for new messages every second
+    setInterval(addCopyButtons, 1000);
+});
+</script>
+
 <div class="watermark">
-    Made by Zakaria
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+    Gemaakt door Zakaria
 </div>
 """, unsafe_allow_html=True)
 
@@ -624,48 +980,59 @@ if not api_key:
     api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
 genai.configure(api_key=api_key)
 
-# Streamlined sidebar
+# Sidebar with improved styling
 with st.sidebar:
-    # New Chat Button
-    if st.button("Nieuwe Chat", key="new_chat_btn"):
-        st.session_state.messages = []
-        st.session_state.show_presets = True
-        st.session_state.active_chat = None
-        st.session_state.context = ""
-        st.session_state.current_page = None
-        st.session_state.thinking = False
-        st.rerun()
+    # Logo and Brand
+    st.markdown("""
+    <div class="brand-logo">
+        <div class="logo-icon">📐</div>
+        <div class="logo-text">Wiskunde Assistent</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Custom buttons instead of standard Streamlit ones
+    st.markdown("""
+    <button class="sidebar-button" id="new-chat-btn" onclick="window.location.reload()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+        </svg>
+        Nieuwe Chat
+    </button>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
     # Homework sections
-    with st.expander("✨ Huiswerk", expanded=True):
-        # Add the Wiskunde option
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("Wiskunde", key="wiskunde_btn"):
-                st.session_state.messages = []
-                st.session_state.context = presets["wiskunde huiswerk"]["content"]
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
-                })
-                st.session_state.show_presets = False
-                st.session_state.active_chat = "Wiskunde Huiswerk Helper"
-                st.rerun()
-        
-        with col2:
-            if st.button("Duits Deelstaten", key="gem_german_states"):
-                st.session_state.messages = []
-                st.session_state.context = presets["duits deelstaten"]["content"]
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-                })
-                st.session_state.show_presets = False
-                st.session_state.active_chat = "Duitse Deelstaten Referentie"
-                st.rerun()
+    st.markdown("#### 📚 Huiswerk Modules")
     
-    # Minimal AI Settings
+    # Wiskunde button
+    if st.button("📐 Wiskunde Huiswerk", key="wiskunde_btn"):
+        st.session_state.messages = []
+        st.session_state.context = presets["wiskunde huiswerk"]["content"]
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
+        })
+        st.session_state.show_presets = False
+        st.session_state.active_chat = "Wiskunde Huiswerk Helper"
+        st.rerun()
+    
+    # Duits button
+    if st.button("🇩🇪 Duits Deelstaten", key="duits_btn"):
+        st.session_state.messages = []
+        st.session_state.context = presets["duits deelstaten"]["content"]
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+        })
+        st.session_state.show_presets = False
+        st.session_state.active_chat = "Duitse Deelstaten Referentie"
+        st.rerun()
+    
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+    
+    # AI Settings
     with st.expander("🤖 AI Instellingen", expanded=False):
         model_options = {
             "Gemini 1.5 Flash": "gemini-1.5-flash",
@@ -681,14 +1048,15 @@ with st.sidebar:
         st.session_state.model_name = model_options[selected_model]
         
         st.session_state.temperature = st.slider(
-            "Temperatuur:",
+            "Creativiteit:",
             min_value=0.0,
             max_value=1.0,
             value=st.session_state.temperature,
-            step=0.1
+            step=0.1,
+            format="%.1f"
         )
 
-# Main content area with chat interface
+# Main chat interface
 main_container = st.container()
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
@@ -700,25 +1068,16 @@ if st.session_state.show_presets and not st.session_state.messages:
         st.session_state.context = ""
         st.session_state.messages.append({
             "role": "assistant", 
-            "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
+            "content": "👋 Hallo! Hoe kan ik je vandaag helpen met je huiswerk? Kies een module in het menu aan de linkerkant."
         })
         st.session_state.show_presets = False
         st.rerun()
 
-# Display chat messages
+# Display chat messages with modern styling
 with main_container:
     for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            
-            # Simple copy button
-            if st.button("Kopiëren", key=f"copy_btn_{i}"):
-                st.session_state.copied_message = i
-                # Simulate clipboard copying (actual implementation would need JavaScript)
-                st.success("Tekst gekopieerd!")
-                time.sleep(0.5)
-                st.session_state.copied_message = None
-                st.rerun()
     
     # Display thinking animation if needed
     if st.session_state.thinking:
@@ -726,7 +1085,8 @@ with main_container:
             st.markdown("""
             <div class="thinking-container">
                 <div class="thinking-icon"></div>
-                Denken<div class="thinking-dots"><span></span><span></span><span></span></div>
+                <span class="thinking-text">Denken</span>
+                <div class="thinking-dots"><span></span><span></span><span></span></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -879,7 +1239,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             message_placeholder = st.empty()
             full_response = ""
             
-            # Stream the response
+            # Stream the response with enhanced animation
             for response in model.generate_content(
                 complete_prompt,
                 stream=True
