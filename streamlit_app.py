@@ -1,694 +1,411 @@
 import streamlit as st 
 import google.generativeai as genai
 import time
-import os
-from dotenv import load_dotenv
+import io
 
 # Set page config
 st.set_page_config(
-    page_title="Homework Assistant",
+    page_title="Home Work Bot",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Advanced CSS styling
+# Simplified CSS with fixed bottom chat input, similar to Claude's interface
 st.markdown("""
 <style>
-    /* === FONTS === */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    
-    /* === BASE STYLES === */
+    /* Dark background */
     body {
         color: white;
-        background-color: #0e0e16;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        transition: all 0.3s ease;
+        background-color: #0e1117;
     }
-    
-    h1, h2, h3, h4, h5 {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-weight: 600;
-        letter-spacing: -0.02em;
-    }
-    
-    /* === SIDEBAR STYLING === */
+    /* Sidebar styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(160deg, #111124 0%, #0d0d1a 100%);
-        border-right: 1px solid rgba(60, 65, 94, 0.2);
-        box-shadow: 2px 0 20px rgba(0,0,0,0.4);
+        background-color: #0e1117;
+        border-right: 1px solid #262730;
     }
-    
-    /* Sidebar headers */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3 {
         color: white;
-        padding: 0.5rem 0;
-        font-weight: 600;
-        letter-spacing: -0.02em;
     }
-    
-    /* Sidebar dividers */
-    .sidebar-divider {
-        border-top: 1px solid rgba(255,255,255,0.07);
-        margin: 1.2rem 0;
-    }
-    
-    /* Subject cards */
-    .subject-card {
-        display: flex;
-        align-items: center;
-        background: rgba(42, 48, 80, 0.2);
-        border: 1px solid rgba(80, 90, 140, 0.2);
-        border-radius: 12px;
-        color: white;
-        font-weight: 500;
-        padding: 12px 16px;
-        margin: 10px 0;
-        transition: all 0.3s ease;
-        width: 100%;
-        cursor: pointer;
-    }
-    
-    .subject-card:hover {
-        transform: translateY(-3px);
-        border: 1px solid rgba(100, 110, 160, 0.4);
-        background: rgba(42, 48, 80, 0.4);
-    }
-    
-    .subject-card .icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 14px;
-        font-size: 20px;
-        flex-shrink: 0;
-    }
-    
-    .subject-card .content {
-        flex-grow: 1;
-    }
-    
-    .subject-card .title {
-        font-weight: 600;
-        margin-bottom: 2px;
-        font-size: 15px;
-    }
-    
-    .subject-card .description {
-        font-size: 12px;
-        color: rgba(255,255,255,0.6);
-    }
-    
-    /* Themes for different subjects */
-    .math-card .icon {
-        background: linear-gradient(135deg, #3a7bd5, #3a6073);
-    }
-    
-    .science-card .icon {
-        background: linear-gradient(135deg, #11998e, #38ef7d);
-    }
-    
-    .language-card .icon {
-        background: linear-gradient(135deg, #f46b45, #eea849);
-    }
-    
-    .history-card .icon {
-        background: linear-gradient(135deg, #614385, #516395);
-    }
-    
-    /* Custom button styling */
-    .stButton > button {
-        background: rgba(42, 48, 80, 0.6);
-        border: 1px solid rgba(80, 90, 140, 0.4);
-        color: white;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        background: rgba(65, 71, 112, 0.8);
-        border-color: rgba(95, 112, 219, 0.6);
-        transform: translateY(-2px);
-    }
-    
-    /* === CHAT STYLING === */
-    /* Modern chat message container */
-    [data-testid="stChatMessage"] {
-        background-color: rgba(35, 37, 47, 0.5);
-        border-radius: 14px;
-        margin: 1.1rem 0;
-        padding: 1.4rem;
-        border: 1px solid rgba(60, 65, 94, 0.2);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        animation: fadeInUp 0.4s ease;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* User message styling */
-    [data-testid="stChatMessage"][data-testid*="user"] {
-        background: linear-gradient(140deg, rgba(42, 48, 74, 0.6) 0%, rgba(40, 45, 75, 0.4) 100%);
-        border-color: rgba(84, 96, 148, 0.25);
-    }
-    
-    /* AI message styling */
-    [data-testid="stChatMessage"][data-testid*="assistant"] {
-        background: linear-gradient(140deg, rgba(41, 48, 66, 0.5) 0%, rgba(50, 65, 85, 0.35) 100%);
-        border-color: rgba(80, 120, 170, 0.2);
-    }
-    
-    /* Chat message animation */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Fixed chat input */
+    /* Simple fixed bottom chat input - Claude style */
     [data-testid="stChatInput"] {
         position: fixed;
         bottom: 0;
-        left: 16.5%;
-        right: 0;
-        background: linear-gradient(180deg, rgba(14, 14, 22, 0) 0%, rgba(14, 14, 22, 0.9) 20%, rgba(14, 14, 22, 1) 100%);
-        backdrop-filter: blur(16px);
-        padding: 1.7rem 2.5rem;
-        border-top: none;
-        z-index: 99;
+        left: 20%;
+        right: 5%;
+        background-color: #0e1117;
+        padding: 1rem 0;
+        border-top: 1px solid #262730;
+        z-index: 999;
     }
-    
-    /* Chat input field */
-    [data-testid="stChatInput"] textarea {
-        background-color: rgba(48, 52, 75, 0.4);
-        border: 1px solid rgba(80, 90, 140, 0.3);
-        border-radius: 12px;
-        padding: 14px 18px;
-        font-size: 15px;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        color: rgba(255, 255, 255, 0.9);
-        font-family: 'Plus Jakarta Sans', sans-serif;
+    /* Container for chat messages */
+    [data-testid="stChatMessageContainer"] {
+        margin-bottom: 100px;
+        padding-bottom: 100px;
     }
-    
-    [data-testid="stChatInput"] textarea:focus {
-        background-color: rgba(48, 52, 75, 0.6);
-        border-color: rgba(95, 112, 219, 0.5);
-        box-shadow: 0 0 0 3px rgba(95, 112, 219, 0.2);
+    /* Chat messages */
+    [data-testid="stChatMessage"] {
+        background-color: #262730;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
+        border: none;
     }
-    
-    /* Chat container spacing */
-    .chat-container {
-        margin-top: 20px;
-        margin-bottom: 120px;
-        padding: 1rem 2rem;
-        max-width: 1200px;
-        margin-left: auto;
-        margin-right: auto;
+    /* User vs assistant messages */
+    [data-testid="stChatMessage"][data-testid*="user"] {
+        background-color: #383b44;
     }
-    
-    /* === UTILITY STYLES === */
-    /* Hide default streamlit elements */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+    /* Buttons */
+    .stButton > button {
+        background-color: #e63946;
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
     }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(30, 34, 44, 0.2);
-        border-radius: 20px;
+    /* Preset cards */
+    .preset-card {
+        background-color: #262730;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
     }
-    
-    ::-webkit-scrollbar-thumb {
-        background: rgba(106, 116, 143, 0.5);
-        border-radius: 20px;
-    }
-    
-    /* Brand logo */
-    .brand-logo {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        padding: 14px;
-        background: linear-gradient(135deg, rgba(42, 48, 80, 0.3) 0%, rgba(30, 34, 55, 0.3) 100%);
-        border-radius: 14px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(80, 90, 140, 0.15);
-    }
-    
-    .logo-icon {
-        width: 42px;
-        height: 42px;
-        margin-right: 14px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: bold;
-        background: linear-gradient(120deg, #5f70db, #8e54e9);
-        box-shadow: 0 4px 10px rgba(95, 112, 219, 0.3);
-    }
-    
-    .logo-text {
-        font-size: 18px;
-        font-weight: 700;
-        background: linear-gradient(90deg, #d4e1ff, #ffffff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.02em;
-    }
-    
-    .logo-slogan {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 2px;
-    }
-    
-    /* App watermark */
+    /* Watermark at top left */
     .watermark {
         position: fixed;
-        bottom: 85px;
-        right: 20px;
-        color: rgba(255, 255, 255, 0.4);
+        top: 10px;
+        left: 10px;
+        color: rgba(255, 255, 255, 0.5);
         font-size: 12px;
         z-index: 1000;
-        pointer-events: none;
-        background-color: rgba(20, 22, 30, 0.4);
-        padding: 6px 12px;
-        border-radius: 8px;
-        backdrop-filter: blur(8px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        display: flex;
-        align-items: center;
-        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    
-    /* Code blocks */
-    pre {
-        background: rgba(30, 30, 50, 0.4) !important;
-        border: 1px solid rgba(95, 112, 219, 0.3) !important;
-        border-radius: 10px !important;
-        padding: 1em !important;
-    }
-    
-    code {
-        color: #a6b2ff !important;
-        background: rgba(95, 112, 219, 0.1) !important;
-        padding: 0.2em 0.4em !important;
-        border-radius: 4px !important;
-        font-size: 0.9em !important;
+    /* Fixed height for chat container */
+    .main .block-container {
+        padding-bottom: 80px;
     }
 </style>
-
-<!-- Simple JavaScript for copy functionality -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Simple button function to copy assistant messages
-    function addCopyButtons() {
-        const messages = document.querySelectorAll('[data-testid="stChatMessage"][data-testid*="assistant"]');
-        
-        messages.forEach(message => {
-            if (!message.querySelector('.copy-button')) {
-                const btn = document.createElement('button');
-                btn.className = 'copy-button';
-                btn.innerHTML = 'Copy';
-                btn.style.cssText = 'position: absolute; top: 8px; right: 8px; background: rgba(95, 112, 219, 0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;';
-                
-                btn.addEventListener('click', function() {
-                    const text = message.textContent.replace('Copy', '');
-                    navigator.clipboard.writeText(text);
-                    
-                    // Show copied feedback
-                    btn.textContent = 'Copied!';
-                    setTimeout(() => { btn.innerHTML = 'Copy'; }, 2000);
-                });
-                
-                message.appendChild(btn);
-                message.style.paddingTop = '30px';
-            }
-        });
-    }
-    
-    // Add copy buttons when DOM changes
-    const observer = new MutationObserver(function() {
-        addCopyButtons();
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Initial check
-    addCopyButtons();
-});
-</script>
-
+<!-- Watermark -->
 <div class="watermark">
-    <span style="margin-left: 5px;">Created by Zakaria</span>
+    home work bot - made by zakaria
 </div>
 """, unsafe_allow_html=True)
 
-# Define subject-specific contexts
-subjects = {
-    "math": {
-        "title": "Mathematics",
-        "icon": "📐",
-        "description": "Algebra, Calculus, Geometry...",
-        "class": "math-card",
-        "context": """You are a specialized mathematics homework assistant. Help students understand mathematical concepts and solve problems by:
+# App title
+st.title("Home Work Bot")
 
-1. Breaking down problems into clear steps
-2. Explaining mathematical concepts in simple language
-3. Providing visual explanations where possible
-4. Showing all work and calculations
-5. Connecting concepts to real-world applications
-
-Focus on helping students truly understand the material, not just get answers. For algebra, calculus, geometry, trigonometry, statistics, and other mathematical topics, show step-by-step solutions with clear explanations for each step."""
-    },
-    "science": {
-        "title": "Science",
-        "icon": "🔬",
-        "description": "Physics, Chemistry, Biology...",
-        "class": "science-card",
-        "context": """You are a specialized science homework assistant. Help students understand scientific concepts and solve problems by:
-
-1. Explaining scientific concepts clearly with examples
-2. Breaking down complex problems into manageable steps
-3. Showing all calculations with proper units
-4. Connecting theoretical concepts to real-world applications
-5. Using diagrams and visual explanations where helpful (described in text)
-
-For physics, chemistry, biology, and other scientific disciplines, provide accurate information and step-by-step problem-solving approaches. Help students understand the underlying principles rather than just providing answers."""
-    },
-    "english": {
-        "title": "English",
-        "icon": "📝",
-        "description": "Grammar, Essays, Literature...",
-        "class": "language-card",
-        "context": """You are a specialized English language and literature homework assistant. Help students with:
-
-1. Grammar rules and proper usage
-2. Essay structure, thesis development, and argumentation
-3. Literary analysis and interpretation
-4. Vocabulary development and word choice
-5. Writing techniques and stylistic improvements
-
-For writing assignments, help students craft strong thesis statements, develop coherent arguments, and improve their writing style. For literature questions, help them analyze themes, characters, symbolism, and literary techniques. Provide examples and clear explanations rather than completing assignments for them."""
-    },
-    "history": {
-        "title": "History",
-        "icon": "📜",
-        "description": "World Events, Social Studies...",
-        "class": "history-card",
-        "context": """You are a specialized history and social studies homework assistant. Help students understand historical events and concepts by:
-
-1. Providing accurate historical information with proper context
-2. Explaining cause-and-effect relationships between events
-3. Analyzing multiple perspectives on historical events
-4. Connecting historical events to broader themes and patterns
-5. Helping students develop critical thinking about historical sources
-
-For history and social studies topics, provide comprehensive explanations that incorporate relevant dates, figures, and details. Help students understand not just what happened but why it happened and its significance."""
-    }
-}
+# Hardcoded API key (ensure this key is secure)
+gemini_api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"
 
 # Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "active_subject" not in st.session_state:
-    st.session_state.active_subject = None
 if "context" not in st.session_state:
-    st.session_state.context = "You are a helpful homework assistant."
+    st.session_state.context = ""
+if "user_presets" not in st.session_state:
+    st.session_state.user_presets = {}
 if "model_name" not in st.session_state:
     st.session_state.model_name = "gemini-1.5-flash"
 if "temperature" not in st.session_state:
     st.session_state.temperature = 0.7
-if "thinking" not in st.session_state:
-    st.session_state.thinking = False
+if "show_presets" not in st.session_state:
+    st.session_state.show_presets = True
 
 # Configure Gemini API
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
-genai.configure(api_key=api_key)
+genai.configure(api_key=gemini_api_key)
 
-# Function to set active subject
-def set_subject(subject_key):
-    if subject_key not in subjects:
-        return
-    
-    # Start a new conversation with that subject
-    st.session_state.messages = []
-    st.session_state.active_subject = subject_key
-    
-    # Set the subject-specific context
-    st.session_state.context = subjects[subject_key]["context"]
-    
-    # Add welcome message
-    welcome_msg = f"👋 Welcome to the {subjects[subject_key]['title']} assistant! How can I help you today?"
-    st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
-    
-    # Force rerun
-    st.rerun()
-
-# Sidebar with clean styling
+# Sidebar with settings
 with st.sidebar:
-    # Logo and Brand
-    st.markdown("""
-    <div class="brand-logo">
-        <div class="logo-icon">📚</div>
-        <div>
-            <div class="logo-text">Homework Pro</div>
-            <div class="logo-slogan">Your study companion</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.header("Settings")
     
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-    
-    # Subject selection header
-    st.markdown("### Choose a Subject")
-    
-    # Subject cards with integrated buttons
-    col1, col2 = st.columns(2)
-    
-    # Mathematics button
-    with col1:
-        st.markdown(f"""
-        <div class="subject-card math-card">
-            <div class="icon">{subjects['math']['icon']}</div>
-            <div class="content">
-                <div class="title">{subjects['math']['title']}</div>
-                <div class="description">{subjects['math']['description']}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        if st.button("Select Mathematics"):
-            set_subject("math")
-    
-    # Science button
-    with col1:
-        st.markdown(f"""
-        <div class="subject-card science-card">
-            <div class="icon">{subjects['science']['icon']}</div>
-            <div class="content">
-                <div class="title">{subjects['science']['title']}</div>
-                <div class="description">{subjects['science']['description']}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        if st.button("Select Science"):
-            set_subject("science")
-    
-    # English button
-    with col1:
-        st.markdown(f"""
-        <div class="subject-card language-card">
-            <div class="icon">{subjects['english']['icon']}</div>
-            <div class="content">
-                <div class="title">{subjects['english']['title']}</div>
-                <div class="description">{subjects['english']['description']}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        if st.button("Select English"):
-            set_subject("english")
-    
-    # History button
-    with col1:
-        st.markdown(f"""
-        <div class="subject-card history-card">
-            <div class="icon">{subjects['history']['icon']}</div>
-            <div class="content">
-                <div class="title">{subjects['history']['title']}</div>
-                <div class="description">{subjects['history']['description']}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        if st.button("Select History"):
-            set_subject("history")
-    
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-    
-    # AI Settings
-    with st.expander("🤖 AI Settings", expanded=False):
+    with st.expander("AI Settings", expanded=False):
+        st.subheader("AI Model")
         model_options = {
             "Gemini 1.5 Flash": "gemini-1.5-flash",
-            "Gemini 1.5 Pro": "gemini-1.5-pro"
+            "Gemini 2.0 Flash Thinking": "gemini-2.0-flash-thinking-exp-01-21",
+            "Gemini 2.0 Flash-Lite": "gemini-2.0-flash-lite"
         }
         
         selected_model = st.selectbox(
-            "AI Model:",
+            "Select AI Model:",
             options=list(model_options.keys()),
             index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
         )
         st.session_state.model_name = model_options[selected_model]
         
-        st.session_state.temperature = st.slider(
-            "Creativity:",
+        st.subheader("Response Style")
+        temperature = st.slider(
+            "Temperature:",
             min_value=0.0,
             max_value=1.0,
             value=st.session_state.temperature,
-            step=0.1,
-            format="%.1f"
+            step=0.1
         )
+        st.session_state.temperature = temperature
+        
+        st.subheader("Chat Management")
+        if st.button("Clear Chat"):
+            st.session_state.messages = []
+            st.session_state.show_presets = True
+            st.rerun()
+    
+    with st.expander("Context Management", expanded=False):
+        # File uploader for PDF and Word documents
+        uploaded_file = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
+        if uploaded_file is not None:
+            file_text = ""
+            if uploaded_file.name.lower().endswith("pdf"):
+                try:
+                    import PyPDF2
+                    reader = PyPDF2.PdfReader(uploaded_file)
+                    for page in reader.pages:
+                        file_text += page.extract_text() + "\n"
+                except ModuleNotFoundError:
+                    st.error("PyPDF2 is not installed. Please include it in your requirements.txt.")
+                except Exception as e:
+                    st.error(f"Error reading PDF: {str(e)}")
+            elif uploaded_file.name.lower().endswith("docx"):
+                try:
+                    import docx
+                    doc = docx.Document(uploaded_file)
+                    file_text = "\n".join([para.text for para in doc.paragraphs])
+                except ModuleNotFoundError:
+                    st.error("python-docx is not installed. Please include it in your requirements.txt.")
+                except Exception as e:
+                    st.error(f"Error reading Word document: {str(e)}")
+            if file_text:
+                if st.button("Load File Content into Context"):
+                    st.session_state.context += "\n" + file_text
+                    st.success("File content added to context.")
+                    st.rerun()
+        
+        # Text area to edit context
+        custom_context = st.text_area(
+            "Edit context:",
+            value=st.session_state.context,
+            height=300,
+            key="custom_context"
+        )
+        
+        # Save Preset functionality - moved outside the nested expander
+        if st.session_state.context.strip():
+            st.subheader("Save as Preset")
+            preset_name = st.text_input("Preset Name:", key="new_preset_name")
+            if st.button("Save Preset") and preset_name:
+                st.session_state.user_presets[preset_name] = st.session_state.context
+                st.success(f"Preset '{preset_name}' saved successfully!")
+                st.rerun()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Save", key="save_context"):
+                st.session_state.context = custom_context
+                st.success("Saved!")
+        with col2:
+            if st.button("Clear", key="clear_context"):
+                st.session_state["custom_context"] = ""
+                st.session_state.context = ""
+                st.rerun()
 
-    # New conversation button
-    if st.button("🔄 New Conversation", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.active_subject = None
-        st.session_state.context = "You are a helpful homework assistant."
-        st.session_state.messages.append({
-            "role": "assistant", 
-            "content": "👋 I'm your homework assistant. Choose a subject or ask me any question!"
-        })
-        st.rerun()
+# Define presets
+presets = {
+    "duits deelstaten": {
+        "content": """PowerPoint Präsentation / PowerPoint Presentatie
+Deutsch:
+Aufgabe: Mache eine PowerPoint-Präsentation über ein Thema, das du wählst. Der Prozess hat drei Teile: Schriftliche Vorbereitung, die PowerPoint machen, und die Präsentation vor der Klasse.
+Schritt 1: Schriftliche Vorbereitung
+Suche Informationen über dein Thema und schreibe die wichtigsten Sachen auf. Deine Vorbereitung soll diese Dinge haben:
 
-# Main chat interface
+Allgemeine Informationen:
+Name:
+Hauptstadt:
+Fläche:
+Einwohnerzahl:
+Lage auf der kaart: [Füge eine Karte ein]
+Geschichte:
+Kurze Geschichte von dem Thema:
+Sehenswürdigkeiten:
+Wichtige Orte, Denkmäler oder Landschaften:
+Kultur und Traditionen:
+Regionale Feste, Bräuche, typische Essen:
+Wirtschaft:
+Wichtige Industrien und was man verdient:
+Sonstiges:
+Interessante Fakten oder besondere Sachen:
+Schreibe deine Notizen in einer guten Reihenfolge, damit deine PowerPoint eine gute Struktur hat.
+Schritt 2: Die PowerPoint-Präsentation maken
+Mache jetzt eine PowerPoint-Präsentation mit mindestens 6 Folien. Achte auf diese Punkte:
+
+Klare und einfache Struktur  
+Nicht zu viel Text auf einer Folie - Stichpunkte sind besser  
+Benutze Bilder, Karten oder Diagramme  
+Einheitliches Aussehen (Farben, Schriftarten)
+
+Schritt 3: Präsentation vor der Klasse  
+Präsentiere deine Präsentation vor der Klasse. Achte auf diese Dinge:
+
+Verständliche und deutliche Aussprache  
+Schaue die Leute an  
+Sprich nicht zu schnell  
+Benutze deine PowerPoint als Hilfe (nicht nur ablesen!)
+
+Bewertungskriterien:
+
+Qualität der Informationen: /20  
+Struktur und Aussehen der PowerPoint: /10  
+Wie du präsentierst und wie gut man dich versteht: /10  
+
+Viel Erfolg!
+Nederlands:
+Taak: Maak een PowerPoint-presentatie over een onderwerp naar keuze. Het proces omvat: schriftelijke voorbereiding, het maken van de PowerPoint-presentatie en de presentatie voor de klas.
+Stap 1: Schriftelijke Voorbereiding
+Verzamel informatie over je gekozen onderwerp en noteer de belangrijkste punten. Je voorbereiding moet de volgende aspecten bevatten:
+
+Algemene informatie:
+Naam:
+Hoofdstad:
+Oppervlakte:
+Bevolking:
+Ligging op de kaart: [Voeg een kaart toe]
+Geschiedenis:
+Korte geschiedenis van het onderwerp:
+Bezienswaardigheden:
+Belangrijke plaatsen, monumenten of landschappen:
+Cultuur en Tradities:
+Regionale festivals, gebruiken, typische gerechten:
+Economie:
+Belangrijke industrieën en wat men verdient:
+Overige:
+Interessante feiten of bijzondere dingen:
+Orden je notities in een logische volgorde om een goede structuur voor je PowerPoint-presentatie te creëren.
+Stap 2: De PowerPoint-presentatie maken
+Maak nu een PowerPoint-presentatie met minstens 6 dia's. Let op de volgende punten:
+
+Duidelijke en eenvoudige structuur  
+Niet te veel tekst op één dia - opsommingstekens zijn beter  
+Gebruik afbeeldingen, kaarten of diagrammen  
+Consistent ontwerp (kleuren, lettertypen)
+
+Stap 3: Presentatie voor de klas
+Geef je presentatie voor de klas. Let daarbij op het volgende:
+
+Verstaanbare en duidelijke uitspraak  
+Kijk de mensen aan  
+Spreek niet te snel  
+Gebruik je PowerPoint als hulp (niet alleen voorlezen!)
+
+Beoordelingscriteria:
+
+Kwaliteit van de informatie: /20  
+Structuur en uiterlijk van de PowerPoint: /10  
+Hoe je presenteert en hoe goed men je begrijpt: /10  
+
+Veel succes!"""
+    }
+}
+
+# Main content area
 main_container = st.container()
 
-# Initialize with welcome message if needed
-if not st.session_state.messages:
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": "👋 I'm your homework assistant. Choose a subject or ask me any question!"
-    })
-
-# Display chat messages
-st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+if st.session_state.show_presets and not st.session_state.messages:
+    with main_container:
+        st.subheader("Kies een preset om te beginnen")
+        cols = st.columns(3)
+        col_idx = 0
+        for preset_name, preset_data in presets.items():
+            with cols[col_idx]:
+                st.markdown(f"""
+                <div class="preset-card" onclick="document.getElementById('{preset_name.replace(' ', '_')}_btn').click();">
+                    <strong>{preset_name}</strong>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button("Select", key=f"{preset_name.replace(' ', '_')}_btn"):
+                    st.session_state.context = preset_data["content"]
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+                    })
+                    st.session_state.show_presets = False
+                    st.rerun()
+            col_idx = (col_idx + 1) % 3
+        
+        if st.session_state.user_presets:
+            st.subheader("Je eigen presets:")
+            user_cols = st.columns(3)
+            col_idx = 0
+            for preset_name, preset_content in st.session_state.user_presets.items():
+                with user_cols[col_idx]:
+                    st.markdown(f"""
+                    <div class="preset-card" onclick="document.getElementById('user_{preset_name.replace(' ', '_')}_btn').click();">
+                        <strong>{preset_name}</strong>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button("Select", key=f"user_{preset_name.replace(' ', '_')}_btn"):
+                        st.session_state.context = preset_content
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": "Wat is je vraag?"
+                        })
+                        st.session_state.show_presets = False
+                        st.rerun()
+                col_idx = (col_idx + 1) % 3
 
 with main_container:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Display thinking animation if needed
-    if st.session_state.thinking:
-        with st.chat_message("assistant"):
-            st.markdown("Thinking...")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Chat input
-prompt = st.chat_input("Ask any homework question...")
-if prompt:
-    # Add user message to session state
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Set thinking state to true
-    st.session_state.thinking = True
-    
-    # Show user message immediately
-    st.rerun()
-
-# Handle AI response generation
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.thinking:
-    user_input = st.session_state.messages[-1]["content"]
-    
-    # Detect subject if none is active
-    if not st.session_state.active_subject:
-        # Simple keyword matching for subject detection
-        subject_keywords = {
-            "math": ["math", "algebra", "calculus", "equation", "geometry", "number", "formula"],
-            "science": ["science", "physics", "chemistry", "biology", "molecule", "cell", "force", "atom"],
-            "english": ["english", "grammar", "essay", "write", "literature", "novel", "poem", "language"],
-            "history": ["history", "war", "revolution", "century", "ancient", "medieval", "civilization", "country"]
-        }
-        
-        detected_subject = None
-        max_matches = 0
-        
-        for subject, keywords in subject_keywords.items():
-            matches = sum(1 for keyword in keywords if keyword.lower() in user_input.lower())
-            if matches > max_matches:
-                max_matches = matches
-                detected_subject = subject
-        
-        # Use detected subject if we found a good match
-        if max_matches > 0:
-            st.session_state.active_subject = detected_subject
-            st.session_state.context = subjects[detected_subject]["context"]
-    
-    try:
-        # Configure the model
-        model = genai.GenerativeModel(
-            st.session_state.model_name,
-            generation_config={"temperature": st.session_state.temperature}
-        )
-        
-        # Prepare prompt with context
-        complete_prompt = f"{st.session_state.context}\n\nStudent question: {user_input}"
-        
-        # Turn off thinking state
-        st.session_state.thinking = False
-        
-        # Generate AI response with streaming
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
+    if prompt := st.chat_input("Typ je vraag..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.show_presets = False
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        try:
+            model = genai.GenerativeModel(
+                st.session_state.model_name,
+                generation_config={"temperature": st.session_state.temperature}
+            )
+            if st.session_state.context:
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                Op basis van bovenstaande context, geef informatie over de deelstaat "{prompt}" en volg exact de structuur uit de context:
+                
+                1. Gebruik precies de secties zoals aangegeven in de context
+                2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
+                3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
+                4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
+                5. Zorg dat elke sectie apart en duidelijk leesbaar is
+                
+                Format de tekst zo:
+                
+                Algemene Informatie:
+                
+                Naam: [naam]
+                
+                Hoofdstad: [hoofdstad]
+                
+                Fläche: [oppervlakte]
+                
+                Einwohnerzahl: [inwoners]
+                
+                Enzovoort voor alle secties uit de context.
+                """
+            else:
+                complete_prompt = prompt
             
-            # Stream the response
-            for response in model.generate_content(complete_prompt, stream=True):
-                if hasattr(response, 'text'):
-                    chunk = response.text
-                    full_response += chunk
-                    message_placeholder.markdown(full_response + "▌")
-                    time.sleep(0.01)
-            
-            # Final display without cursor
-            message_placeholder.markdown(full_response)
-                    
-            # Add assistant message to chat history
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-    
-    except Exception as e:
-        # Handle errors
-        st.error(f"Error: {str(e)}")
-        st.session_state.messages.append({"role": "assistant", "content": f"I'm sorry, an error occurred: {str(e)}"})
-        st.session_state.thinking = False
-    
-    # Rerun to update UI
-    st.rerun()
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                response = model.generate_content(
+                    complete_prompt,
+                    stream=True
+                )
+                full_response = ""
+                for chunk in response:
+                    if hasattr(chunk, 'text'):
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
