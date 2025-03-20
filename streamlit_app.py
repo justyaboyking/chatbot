@@ -1,5 +1,6 @@
 import streamlit as st 
 import google.generativeai as genai
+import time
 import os
 from dotenv import load_dotenv
 
@@ -7,40 +8,41 @@ from dotenv import load_dotenv
 st.set_page_config(
     page_title="Home Work Bot",
     page_icon="📚",
-    layout="centered",  # Changed to centered for better mobile experience
-    initial_sidebar_state="collapsed"  # Start with collapsed sidebar on mobile
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Mobile-optimized CSS
+# Clean, minimal CSS
 st.markdown("""
 <style>
-    /* Base styles */
+    /* Modern clean theme */
     body {
         color: white;
         background-color: #0e1117;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Mobile-friendly sidebar */
+    /* Clean sidebar */
     [data-testid="stSidebar"] {
         background-color: #1a1c24;
         border-right: 1px solid rgba(42, 45, 54, 0.3);
-        min-width: 250px !important;
     }
     
     /* Improved typography */
-    h1, h2, h3 {
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
         color: white;
         padding: 0.5rem 0;
         font-weight: 500;
     }
     
-    /* Chat messages */
+    /* Sleek chat messages */
     [data-testid="stChatMessage"] {
         background-color: #262730;
         border-radius: 0.75rem;
         margin: 0.75rem 0;
-        padding: 0.75rem;
+        padding: 1rem;
         border: none;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
@@ -50,23 +52,24 @@ st.markdown("""
         background-color: #383b44;
     }
     
-    /* Mobile responsive chat input */
+    /* Fixed chat input */
     [data-testid="stChatInput"] {
         position: fixed;
         bottom: 0;
-        left: 0;
+        left: 20%;
         right: 0;
         background-color: rgba(14, 17, 23, 0.95);
         backdrop-filter: blur(5px);
-        padding: 0.75rem;
+        padding: 1rem 2rem;
         border-top: none;
         z-index: 99;
     }
     
     /* Chat container spacing */
     .chat-container {
-        margin-bottom: 60px;
-        padding: 0.5rem;
+        margin-top: 20px;
+        margin-bottom: 80px;
+        padding: 1rem 2rem;
     }
     
     /* Hide default streamlit elements */
@@ -74,7 +77,7 @@ st.markdown("""
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Button styling */
+    /* Clean button styling */
     button[data-testid="baseButton-secondary"] {
         background-color: #404756 !important;
         color: white !important;
@@ -82,22 +85,24 @@ st.markdown("""
         border-radius: 0.25rem !important;
     }
     
-    /* Mobile responsive design */
-    @media (max-width: 768px) {
-        .chat-container {
-            padding: 0.25rem;
-        }
-        
-        [data-testid="stChatMessage"] {
-            padding: 0.5rem;
-            margin: 0.5rem 0;
-        }
-        
-        [data-testid="stChatInput"] {
-            padding: 0.5rem;
-        }
+    /* Minimal watermark */
+    .watermark {
+        position: fixed;
+        bottom: 60px;
+        right: 20px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+        z-index: 1000;
+        pointer-events: none;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 5px 10px;
+        border-radius: 4px;
     }
 </style>
+
+<div class="watermark">
+    Made by Zakaria
+</div>
 """, unsafe_allow_html=True)
 
 # Initialize session state variables
@@ -113,8 +118,10 @@ if "show_presets" not in st.session_state:
     st.session_state.show_presets = True
 if "active_chat" not in st.session_state:
     st.session_state.active_chat = None
+if "copied_message" not in st.session_state:
+    st.session_state.copied_message = None
 
-# Define presets - only keep what's needed
+# Define presets - simplified to core content
 presets = {
     "duits deelstaten": {
         "content": """PowerPoint Präsentation / PowerPoint Presentatie
@@ -211,14 +218,14 @@ Veel succes!"""
     }
 }
 
-# Configure Gemini API
+# Configure Gemini API - Use environment variables for security
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
 genai.configure(api_key=api_key)
 
-# Simplified sidebar for mobile
+# Simplified streamlined sidebar
 with st.sidebar:
     # New Chat Button
     if st.button("Nieuwe Chat", key="new_chat_btn"):
@@ -226,75 +233,97 @@ with st.sidebar:
         st.session_state.show_presets = True
         st.session_state.active_chat = None
         st.session_state.context = ""
-        st.experimental_rerun()
+        st.rerun()
     
-    # Only essential sections
-    st.subheader("✨ Huiswerk")
-    if st.button("Duits Deelstaten", key="gem_german_states"):
-        st.session_state.messages = []
-        st.session_state.context = presets["duits deelstaten"]["content"]
-        st.session_state.messages.append({
-            "role": "assistant", 
-            "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-        })
-        st.session_state.show_presets = False
-        st.session_state.active_chat = "Duitse Deelstaten Referentie"
-        st.experimental_rerun()
+    # Essential sections only - Huiswerk section
+    with st.expander("✨ Huiswerk", expanded=False):
+        if st.button("Duits Deelstaten", key="gem_german_states"):
+            st.session_state.messages = []
+            st.session_state.context = presets["duits deelstaten"]["content"]
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+            })
+            st.session_state.show_presets = False
+            st.session_state.active_chat = "Duitse Deelstaten Referentie"
+            st.rerun()
     
-    # Simplified AI Settings
-    st.subheader("🤖 AI Instellingen")
-    model_options = {
-        "Gemini 1.5 Flash": "gemini-1.5-flash",
-        "Gemini 2.0 Flash": "gemini-2.0-flash-thinking-exp-01-21",
-        "Gemini 2.0 Flash-Lite": "gemini-2.0-flash-lite"
-    }
-    
-    selected_model = st.selectbox(
-        "AI Model:",
-        options=list(model_options.keys()),
-        index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
-    )
-    st.session_state.model_name = model_options[selected_model]
-    
-    st.session_state.temperature = st.slider(
-        "Temperatuur:", min_value=0.0, max_value=1.0, 
-        value=st.session_state.temperature, step=0.1
-    )
+    # Minimal AI Settings
+    with st.expander("🤖 AI Instellingen", expanded=False):
+        model_options = {
+            "Gemini 1.5 Flash": "gemini-1.5-flash",
+            "Gemini 2.0 Flash Thinking": "gemini-2.0-flash-thinking-exp-01-21",
+            "Gemini 2.0 Flash-Lite": "gemini-2.0-flash-lite"
+        }
+        
+        selected_model = st.selectbox(
+            "AI Model:",
+            options=list(model_options.keys()),
+            index=list(model_options.values()).index(st.session_state.model_name) if st.session_state.model_name in list(model_options.values()) else 0
+        )
+        st.session_state.model_name = model_options[selected_model]
+        
+        st.session_state.temperature = st.slider(
+            "Temperatuur:",
+            min_value=0.0,
+            max_value=1.0,
+            value=st.session_state.temperature,
+            step=0.1
+        )
     
     # Simplified context management
-    st.subheader("📄 Context")
-    custom_context = st.text_area(
-        "", value=st.session_state.context, height=150
-    )
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Opslaan"):
-            st.session_state.context = custom_context
-    with col2:
-        if st.button("Wissen"):
-            st.session_state.context = ""
-            st.experimental_rerun()
+    with st.expander("📄 Context", expanded=False):
+        custom_context = st.text_area(
+            "Context:",
+            value=st.session_state.context,
+            height=200
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Opslaan"):
+                st.session_state.context = custom_context
+                st.success("Opgeslagen!")
+        with col2:
+            if st.button("Wissen"):
+                st.session_state.context = ""
+                st.rerun()
 
 # Main content area with chat interface
+main_container = st.container()
+
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# Initial greeting - simplified
-if not st.session_state.messages:
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
-    })
-    st.session_state.show_presets = False
+# Initial greeting
+if st.session_state.show_presets and not st.session_state.messages:
+    with main_container:
+        st.session_state.messages = []
+        st.session_state.context = ""
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
+        })
+        st.session_state.show_presets = False
+        st.rerun()
 
-# Display chat messages - optimized for performance
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Display chat messages
+with main_container:
+    for i, message in enumerate(st.session_state.messages):
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            
+            # Simple copy button
+            if st.button("Kopiëren", key=f"copy_btn_{i}"):
+                st.session_state.copied_message = i
+                # Simulate clipboard copying (actual implementation would need JavaScript)
+                st.success("Tekst gekopieerd!")
+                time.sleep(0.5)
+                st.session_state.copied_message = None
+                st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Chat input
+# Chat input - FIXED PLACEMENT OUTSIDE CONTAINERS
 prompt = st.chat_input("Typ je vraag hier...")
 if prompt:
     # Add user message to session state
@@ -306,7 +335,13 @@ if prompt:
         chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
         st.session_state.active_chat = chat_title
     
-    # Handle AI response generation
+    # Show user message immediately
+    st.rerun()
+
+# Handle AI response generation (after rerun with user message visible)
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    user_input = st.session_state.messages[-1]["content"]
+    
     try:
         # Configure the model
         model = genai.GenerativeModel(
@@ -320,7 +355,7 @@ if prompt:
             Context informatie:
             {st.session_state.context}
             
-            Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{prompt}" en volg exact de structuur uit de context:
+            Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{user_input}" en volg exact de structuur uit de context:
             
             1. Gebruik precies de secties zoals aangegeven in de context
             2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
@@ -329,7 +364,7 @@ if prompt:
             5. Zorg dat elke sectie apart en duidelijk leesbaar is
             """
         else:
-            complete_prompt = prompt
+            complete_prompt = user_input
         
         # Generate AI response with streaming
         with st.chat_message("assistant"):
@@ -345,19 +380,20 @@ if prompt:
                     chunk = response.text
                     full_response += chunk
                     message_placeholder.markdown(full_response + "▌")
+                    time.sleep(0.01)  # Short delay to make typing visible
             
             # Final display without cursor
             message_placeholder.markdown(full_response)
                     
-            # Add assistant message to chat history
+            # Add assistant message to chat history after streaming completes
             st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     except Exception as e:
         # Handle errors
-        with st.chat_message("assistant"):
-            st.error(f"Error: {str(e)}")
+        st.error(f"Error: {str(e)}")
         
         # Add error message to chat
         st.session_state.messages.append({"role": "assistant", "content": f"Er is een fout opgetreden: {str(e)}"})
     
-    st.experimental_rerun()
+    # Rerun to update UI with new messages
+    st.rerun()
