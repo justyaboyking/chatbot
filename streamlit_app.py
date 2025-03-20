@@ -223,7 +223,6 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
-    st.warning("Using fallback API key. Set GEMINI_API_KEY in your .env file for security.")
 genai.configure(api_key=api_key)
 
 # Simplified streamlined sidebar
