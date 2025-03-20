@@ -372,15 +372,18 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             full_response = ""
             
             # Stream the response
-            response = model.generate_content(
+            for response in model.generate_content(
                 complete_prompt,
                 stream=True
-            )
+            ):
+                if hasattr(response, 'text'):
+                    chunk = response.text
+                    full_response += chunk
+                    message_placeholder.markdown(full_response + "▌")
+                    time.sleep(0.01)  # Short delay to make typing visible
             
-            for chunk in response:
-                if hasattr(chunk, 'text'):
-                    full_response += chunk.text
-                    message_placeholder.markdown(full_response)
+            # Final display without cursor
+            message_placeholder.markdown(full_response)
                     
             # Add assistant message to chat history after streaming completes
             st.session_state.messages.append({"role": "assistant", "content": full_response})
