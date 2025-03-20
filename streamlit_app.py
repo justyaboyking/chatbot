@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import time
 import os
-import re  # Expliciete import van re module toegevoegd
+import re  # Expliciete import van re module
 from dotenv import load_dotenv
 
 # Set page config
@@ -116,12 +116,35 @@ def get_page_content():
         10. Het verband tussen het aantal en de kostprijs (in euro) is lineair.
         Vul de ontbrekende waarden in de tabel aan.
         
+        Aantal | 0 | 1 | 2 | 3
+        Kostprijs (€) | 50 | 40 | | 
+        
+        Aantal | 0 | 1 | 2 | 3
+        Kostprijs (€) | 10 | 15 | | 
+        
+        Aantal | 0 | 1 | 2 | 3
+        Kostprijs (€) | 16 | 16 | | 
+        
+        Aantal | 0 | 1 | 2 | 3
+        Kostprijs (€) | 0 | 2,5 | | 
+        
         11. Je koopt een aantal van de onderstaande producten.
+        a. Stel het verband tussen het aantal en de kostprijs (in euro) met een tabel voor.
+        Product A: €4,5/stuk
+        Product B: €1,25/stuk
         
         12. Vul de tabel aan met behulp van de formules.
         12a. p = 4 x z
+        z | 0 | 1 | 2 | 3 | 5 | 15
+        p | | | | | | 
+        
         12b. p = 10 + (2 x t)
+        t | 0 | 1 | 2 | 3 | 5 | 15
+        p | | | | | | 
+        
         12c. p = d x 3,14
+        d | 0 | 1 | 2 | 3 | 5 | 15
+        p | | | | | | 
         
         13. Het lineair verband tussen de temperatuur [T] en de tijd [t] is telkens met tabellen
         voorgesteld.
@@ -131,8 +154,32 @@ def get_page_content():
         Pagina 209 bevat de volgende opgaven:
         
         13. (vervolg)
+        13a. Vul de ontbrekende waarden in de tabellen aan.
+        
+        Tabel A:
+        t (h) | 0 | 1 | 2 | 3
+        T (°C) | 0 | 4 | 8 | 
+        
+        Tabel B:
+        t (h) | 0 | 1 | 2 | 3
+        T (°C) | 1 | 4 | 7 | 
+        
+        Tabel C:
+        t (h) | 0 | 1 | 2 | 3
+        T (°C) | 8 | 6 | 4 | 
+        
+        Tabel D:
+        t (h) | 0 | 1 | 2 | 3
+        T (°C) | 3 | 3 | 3 | 
+        
         13b. Welke tabel past bij welke formule?
-        13c. Welke tabel past bij welke grafiek?
+        T = 4 x t
+        T = 1 + (3 x t)
+        T = 3
+        T = 8 - (2 x t)
+        
+        13c. Welke tabel past bij welke grafiek? [Er zijn vier grafieken getoond in het boek]
+        
         13d. Bij welke tabel merk je een stijgend lineair verband?
         Bij welke tabel merk je een dalend lineair verband?
         Bij welke tabel merk je een constant lineair verband?
@@ -144,20 +191,69 @@ def get_page_content():
         14. Het verband tussen de massa [in kilogram] en de kostprijs [in euro] is lineair.
         Vul de ontbrekende waarden in de tabel aan.
         
+        a. massa | 0 | 1 | 2 | 3
+           kostprijs | 0 | 3,5 | | 
+        
+        b. massa | 0,5 | 1 | 1,5 | 5
+           kostprijs | 5 | 10 | | 
+           
+        c. massa | 0,1 | 0,2 | 0,5 | 1
+           kostprijs | 2 | 4 | | 
+           
+        d. massa | 0,25 | 0,5 | 1 | 1,5
+           kostprijs | | | 8 | 12
+        
         15. Het verband tussen de tijd [in uur] en de kostprijs [in euro] is lineair.
         Vul de ontbrekende waarden in de tabel aan.
+        
+        a. tijd | 0 | 0,5 | 1 | 1,5
+           kostprijs | 10 | | 60 | 
+           
+        b. tijd | 0 | 0,25 | 1 | 2
+           kostprijs | 0 | 25 | | 
+           
+        c. tijd | 0 | 0,1 | 0,5 | 1
+           kostprijs | 50 | | | 110
+           
+        d. tijd | 0 | 0,25 | 0,5 | 1
+           kostprijs | 5 | | 15 | 
         """,
         
         211: """
         Pagina 211 bevat de volgende opgaven:
         
         16. Het verband tussen de tijd [in weken] en de massa [in kilogram] is lineair.
-        Vul de ontbrekende waarden in de tabel aan.
+        a. Vul de ontbrekende waarden in de tabel aan.
+        
+        Tabel A:
+        tijd | 0 | 1 | 2 | 5
+        massa | 80 | 75 | | 
+        
+        Tabel B:
+        tijd | 0 | 1 | 2,5 | 6
+        massa | 50 | 48 | | 
+        
+        b. Welke tabel past bij welke omschrijving?
+        Als de tijd met één week toeneemt, dan:
+        • stijgt de massa telkens met 5 kg.
+        • stijgt de massa telkens met 2 kg.
+        • daalt de massa telkens met 5 kg.
+        • daalt de massa telkens met 2 kg.
+        
+        c. Welke tabel past bij welke grafiek? [Er zijn grafieken getoond in het boek]
         
         17. Vul de tabel aan met behulp van de formules.
         17a. z = 35 x t
+        t | 0 | 1 | 2 | 3 | 5 | 10
+        z | | | | | | 
+        
         17b. h = 100 - (5 x u)
+        u | 0 | 1 | 2 | 3 | 5 | 20
+        h | | | | | | 
+        
         17c. k = 7,5 + (0,5 x m)
+        m | 0 | 1 | 2 | 3 | 5 | 30
+        k | | | | | | 
         """,
         
         212: """
@@ -166,6 +262,26 @@ def get_page_content():
         18. Stel het verband tussen het aantal drankjes en het bedrag voor met een tabel.
         Welke formule heb je gebruikt om het bedrag te berekenen? Vul aan.
         Merk je een stijgend, dalend of constant verband? Duid aan.
+        
+        a. Voor één drankje betaal je op het terras van de Grote Markt € 2,40.
+        
+        aantal drankjes (n) | 0 | 1 | 2 | 3 | 4 | 10
+        bedrag (b) in euro | | | | | | 
+        
+        b. Je betaalt op een feest € 8 inkom. Drankjes kosten er € 1,80.
+        
+        aantal drankjes (n) | 0 | 1 | 2 | 3 | 4 | 10
+        bedrag (b) in euro | | | | | | 
+        
+        c. Je hebt € 30 bij. In de cafetaria kost een drankje € 2,10.
+        
+        aantal drankjes | 0 | 1 | 2 | 3 | 4 | 10
+        bedrag (b) in euro | | | | | | 
+        
+        d. Voor € 2 extra kun je de hele avond gratis gebruik maken van het toilet.
+        
+        aantal toiletbezoeken | 0 | 1 | 2 | 3 | 4 | 10
+        bedrag (b) in euro | | | | | | 
         """
     }
     
@@ -249,7 +365,13 @@ Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen
 
 ## Instructies:
 
-1. Als de leerling "alles" typt, geef dan volledige oplossingen voor ALLE opdrachten op de huidige pagina, opgesplitst per opdracht en deelvraag met duidelijke tussenkopjes.
+1. Als de leerling "alles" typt, moet je ALLE opgaven op de huidige pagina VOLLEDIG oplossen. Dit betekent:
+   - Geef voor elke opgave de volledige tekst van de opgave
+   - Geef een complete stapsgewijze uitwerking met alle stappen duidelijk uitgelegd
+   - Vul alle tabellen volledig in met de berekende waarden
+   - Geef de formules én de gebruikte getallen in elke berekening
+   - Geef alle antwoorden duidelijk aan
+   - Behandel elke deelvraag (a, b, c, etc.) afzonderlijk
 
 2. Als de leerling een specifiek paginanummer noemt, switch dan naar die pagina en beschrijf kort welke opdrachten er op die pagina staan.
 
@@ -594,14 +716,22 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Paginainhoud:
                     {page_content}
                     
-                    De leerling heeft "alles" gevraagd voor pagina {st.session_state.current_page}. Geef een complete uitwerking van ALLE opgaven op deze pagina. 
-                    Behandel elke opgave en deelvraag afzonderlijk met duidelijke tussenkopjes. Geef voor elke opgave:
+                    De leerling heeft "alles" getypt voor pagina {st.session_state.current_page}. 
                     
-                    1. De opgavetekst
-                    2. Een stapsgewijze uitwerking met alle berekeningen
-                    3. Het eindantwoord duidelijk gemarkeerd
+                    BELANGRIJK: Je MOET alle opgaven op deze pagina VOLLEDIG uitwerken. 
+                    Geef voor elke opgave:
+                    1. De volledige opgavetekst
+                    2. Een volledige stapsgewijze uitwerking waarin je elke berekening toont
+                    3. Tabellen die VOLLEDIG zijn ingevuld (niet met voorbeeldwaarden, maar met de werkelijke berekende waarden)
+                    4. Duidelijke tussenstappen en uitleg
+                    5. Het eindantwoord duidelijk gemarkeerd
                     
-                    Maak het echt volledig en uitgebreid, zonder stappen over te slaan.
+                    Behandel elke deelvraag (a, b, c, etc.) volledig en afzonderlijk met een eigen tussenkop.
+                    Gebruik duidelijke kopjes voor elke opgave zoals "## Opgave 10" en "### Opgave 10a" voor deelvragen.
+                    
+                    BELANGRIJK: Ik wil dat je ALLE berekeningen uitvoert en EXACTE antwoorden geeft, niet alleen uitlegt hoe je het zou kunnen doen.
+                    
+                    Als een uitwerking erg lang wordt, splits deze dan op in duidelijke stappen maar blijf ALLE stappen tonen.
                     """
                 elif "maak" in user_input.lower() and "pagina" in user_input.lower():
                     complete_prompt = f"""
@@ -612,7 +742,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     {page_content}
                     
                     De leerling vraagt om pagina {st.session_state.current_page} te behandelen. Geef een overzicht van alle opgaven op deze pagina, en vraag aan de leerling 
-                    welke specifieke opgave(n) ze willen behandelen. Bijvoorbeeld: "Opdracht 10a, 10b, 11, 12a" of "alles" voor alle opgaven op de pagina.
+                    welke specifieke opgave(n) ze willen behandelen. Vermeld dat de leerling ook "alles" kan typen om alle opgaven op deze pagina volledig uitgewerkt te krijgen.
                     """
                 else:
                     # Handle specific exercise requests
@@ -628,13 +758,14 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Beantwoord deze vraag volgens de volgende richtlijnen:
                     1. Als het een specifieke opdracht betreft (zoals "10a" of "opgave 12"), behandel deze volledig 
                     2. Geef een stapsgewijze uitleg in duidelijk Nederlands
-                    3. Toon alle berekeningen en tussenresultaten
+                    3. Toon ALLE berekeningen en tussenresultaten
                     4. Leg de wiskundige concepten helder uit
                     5. Focus op het helpen van de leerling om het concept te begrijpen
                     6. Bij tabellen of grafieken, geef een duidelijke uitleg van de relatie
                     7. Houd de uitleg bondig maar volledig
                     
                     Als er specifieke opdrachtennummers worden genoemd, behandel die exact en volledig.
+                    BELANGRIJK: Vul ALLE tabellen volledig in met de berekende waarden, niet alleen met voorbeeldwaarden.
                     """
             else:
                 # Try to extract a page number from the numeric input
@@ -650,7 +781,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     {page_content}
                     
                     De leerling heeft pagina {st.session_state.current_page} geselecteerd. Geef een overzicht van alle opdrachten op deze pagina, en vraag de leerling 
-                    welke specifieke opgave(n) ze willen behandelen. Bijvoorbeeld: "Opdracht 10a, 10b, 11, 12a" of "alles" voor alle opgaven op de pagina.
+                    welke specifieke opgave(n) ze willen behandelen. Vermeld dat de leerling ook "alles" kan typen om alle opgaven op deze pagina volledig uitgewerkt te krijgen.
                     """
                 else:
                     # No page selected yet
