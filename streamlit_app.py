@@ -120,8 +120,10 @@ if "active_chat" not in st.session_state:
     st.session_state.active_chat = None
 if "copied_message" not in st.session_state:
     st.session_state.copied_message = None
+if "current_page" not in st.session_state:
+    st.session_state.current_page = None
 
-# Define presets - simplified to core content
+# Define presets
 presets = {
     "duits deelstaten": {
         "content": """PowerPoint Präsentation / PowerPoint Presentatie
@@ -215,6 +217,66 @@ Structuur en uiterlijk van de PowerPoint: /10
 Hoe je presenteert en hoe goed men je begrijpt: /10  
 
 Veel succes!"""
+    },
+    "wiskunde huiswerk": {
+        "content": """# Wiskunde Huiswerk Helper Prompt
+
+Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen van Nederlandse wiskundeproblemen voor middelbare scholieren. Je helpt leerlingen met hun wiskunde huiswerk door duidelijke, stapsgewijze uitleg te geven van de opgaven.
+
+## Instructies:
+
+1. Begin door de leerling te vragen: "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
+
+2. Zodra de leerling een paginanummer of bereik opgeeft, identificeer je de specifieke opdrachten op die pagina's.
+
+3. Voor elke opdracht:
+   - Lees de vraag zorgvuldig
+   - Geef een volledige, stapsgewijze oplossing
+   - Leg de wiskundige concepten duidelijk uit
+   - Toon alle berekeningen
+   - Presenteer het antwoord in de vorm zoals het werkboek verwacht
+
+4. Focus op de volgende onderwerpen die in het werkboek voorkomen:
+   - Lineaire verbanden
+   - Formules en vergelijkingen
+   - Grafieken interpreteren en opstellen
+   - Tabellen invullen
+   - Toepassingsproblemen (kosten, tijd, afstand, etc.)
+   - Stijgende, dalende of constante verbanden
+
+5. Gebruik de juiste Nederlandse wiskundige terminologie.
+
+6. Als er meerdere vragen op een pagina staan (a, b, c, d, etc.), behandel ze dan één voor één en markeer duidelijk welke vraag je beantwoordt.
+
+7. Als een tabel moet worden ingevuld, maak dan een duidelijke tabel met alle berekende waarden.
+
+8. Voor grafiekvragen, leg uit welke grafiek bij welke formule hoort en waarom.
+
+9. Blijf vriendelijk, geduldig en begrijpend, maar blijf altijd in het Nederlands antwoorden.
+
+10. Als een vraag extra uitleg nodig heeft, geef dan aanvullende context over het wiskundige concept.
+
+Herinner je: het doel is om de leerling te helpen de stof te begrijpen, niet alleen de antwoorden te geven.
+
+## Pagina Informatie
+
+De werkboekpagina's 208-221 bevatten opgaven over de volgende onderwerpen:
+- Lineaire verbanden
+- Formules opstellen en toepassen
+- Grafieken interpreteren en analyseren 
+- Tabellen invullen en verbanden bepalen
+- Toepassingsproblemen met kosten, tijd, afstand, etc.
+
+Er zijn verschillende opdrachten zoals:
+- Opdracht 10-13: Lineaire verbanden tussen variabelen
+- Opdracht 14-17: Tabellen invullen met formules
+- Opdracht 18-21: Grafieken en formules koppelen
+- Opdracht 22-25: Toepassingen met prijzen, afstanden en tijd
+- Opdracht 26-29: Verbanden tussen verschillende variabelen
+- Opdracht 30-33: Toepassingen met groei, kosten en brandstof
+
+Elk opdrachtnummer kan deelvragen hebben (a, b, c, d, etc.) die je per stuk moet beantwoorden.
+"""
     }
 }
 
@@ -225,7 +287,7 @@ if not api_key:
     api_key = "AIzaSyBry97WDtrisAkD52ZbbTShzoEUHenMX_w"  # Fallback for testing
 genai.configure(api_key=api_key)
 
-# Simplified streamlined sidebar
+# Streamlined sidebar
 with st.sidebar:
     # New Chat Button
     if st.button("Nieuwe Chat", key="new_chat_btn"):
@@ -235,18 +297,54 @@ with st.sidebar:
         st.session_state.context = ""
         st.rerun()
     
-    # Essential sections only - Huiswerk section
-    with st.expander("✨ Huiswerk", expanded=False):
-        if st.button("Duits Deelstaten", key="gem_german_states"):
-            st.session_state.messages = []
-            st.session_state.context = presets["duits deelstaten"]["content"]
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
-            })
-            st.session_state.show_presets = False
-            st.session_state.active_chat = "Duitse Deelstaten Referentie"
-            st.rerun()
+    # Homework sections
+    with st.expander("✨ Huiswerk", expanded=True):
+        # Add the Wiskunde option
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Wiskunde", key="wiskunde_btn"):
+                st.session_state.messages = []
+                st.session_state.context = presets["wiskunde huiswerk"]["content"]
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
+                })
+                st.session_state.show_presets = False
+                st.session_state.active_chat = "Wiskunde Huiswerk Helper"
+                st.rerun()
+        
+        with col2:
+            if st.button("Duits Deelstaten", key="gem_german_states"):
+                st.session_state.messages = []
+                st.session_state.context = presets["duits deelstaten"]["content"]
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": "Wat is je deelstaat? (Bijvoorbeeld: Bayern, Hessen, Nordrhein-Westfalen)"
+                })
+                st.session_state.show_presets = False
+                st.session_state.active_chat = "Duitse Deelstaten Referentie"
+                st.rerun()
+    
+    # Page selector for Wiskunde (only shown when in Wiskunde mode)
+    if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
+        with st.expander("📝 Wiskunde Pagina's", expanded=True):
+            # Page range for the workbook
+            page_range = list(range(208, 222))  # Pages 208-221
+            
+            selected_page = st.selectbox(
+                "Selecteer een pagina:",
+                page_range,
+                index=0 if not st.session_state.current_page else page_range.index(st.session_state.current_page)
+            )
+            
+            if selected_page != st.session_state.current_page:
+                st.session_state.current_page = selected_page
+                st.session_state.messages.append({
+                    "role": "user", 
+                    "content": f"Ik wil graag aan pagina {selected_page} werken"
+                })
+                st.rerun()
     
     # Minimal AI Settings
     with st.expander("🤖 AI Instellingen", expanded=False):
@@ -271,7 +369,7 @@ with st.sidebar:
             step=0.1
         )
     
-    # Simplified context management
+    # Context management
     with st.expander("📄 Context", expanded=False):
         custom_context = st.text_area(
             "Context:",
@@ -323,7 +421,7 @@ with main_container:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Chat input - FIXED PLACEMENT OUTSIDE CONTAINERS
+# Chat input
 prompt = st.chat_input("Typ je vraag hier...")
 if prompt:
     # Add user message to session state
@@ -363,6 +461,51 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
             5. Zorg dat elke sectie apart en duidelijk leesbaar is
             """
+        elif st.session_state.active_chat == "Wiskunde Huiswerk Helper" and st.session_state.context:
+            # Check if user input contains a page number reference
+            page_mention = any(str(p) in user_input for p in range(208, 222))
+            
+            if "pagina" in user_input.lower() and not page_mention:
+                # Try to extract page number
+                try:
+                    import re
+                    page_nums = re.findall(r'\d+', user_input)
+                    if page_nums:
+                        page_num = int(page_nums[0])
+                        if 208 <= page_num <= 221:
+                            st.session_state.current_page = page_num
+                except:
+                    pass
+            
+            if st.session_state.current_page:
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                De leerling werkt nu aan pagina {st.session_state.current_page} van het wiskunde werkboek en stelt de volgende vraag:
+                "{user_input}"
+                
+                Beantwoord deze vraag volgens de volgende richtlijnen:
+                1. Geef een stapsgewijze uitleg in duidelijk Nederlands
+                2. Toon alle berekeningen en tussenresultaten
+                3. Leg de wiskundige concepten helder uit
+                4. Focus op het helpen van de leerling om het concept te begrijpen
+                5. Als het een specifieke opdracht betreft, behandel deze volledig
+                6. Bij tabellen of grafieken, geef een duidelijke uitleg van de relatie
+                7. Houd de uitleg bondig maar volledig
+                
+                Als de vraag onduidelijk is of meer context nodig heeft, vraag dan om verduidelijking.
+                """
+            else:
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                De leerling heeft nog geen specifieke pagina geselecteerd en stelt de volgende vraag:
+                "{user_input}"
+                
+                Help de leerling met deze vraag of vraag om een specifiek paginanummer tussen 208-221 om gerichter te kunnen helpen.
+                """
         else:
             complete_prompt = user_input
         
