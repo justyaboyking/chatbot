@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Advanced CSS - all styling in one block to avoid syntax errors
+# Advanced CSS styling
 st.markdown("""
 <style>
     /* === FONTS === */
@@ -119,6 +119,24 @@ st.markdown("""
     
     .history-card .icon {
         background: linear-gradient(135deg, #614385, #516395);
+    }
+    
+    /* Custom button styling */
+    .stButton > button {
+        background: rgba(42, 48, 80, 0.6);
+        border: 1px solid rgba(80, 90, 140, 0.4);
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background: rgba(65, 71, 112, 0.8);
+        border-color: rgba(95, 112, 219, 0.6);
+        transform: translateY(-2px);
     }
     
     /* === CHAT STYLING === */
@@ -300,11 +318,6 @@ st.markdown("""
         border-radius: 4px !important;
         font-size: 0.9em !important;
     }
-    
-    /* Hide buttons container */
-    .hidden-buttons {
-        display: none !important;
-    }
 </style>
 
 <!-- Simple JavaScript for copy functionality -->
@@ -345,18 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial check
     addCopyButtons();
-    
-    // Handle subject card clicks
-    const subjectCards = document.querySelectorAll('.subject-card');
-    subjectCards.forEach(card => {
-        card.addEventListener('click', function() {
-            const subjectKey = this.getAttribute('data-subject');
-            if (subjectKey) {
-                const button = document.querySelector(`button[data-subject="${subjectKey}"]`);
-                if (button) button.click();
-            }
-        });
-    });
 });
 </script>
 
@@ -365,48 +366,83 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 """, unsafe_allow_html=True)
 
-# Define AI context
-ai_context = """You are a helpful AI homework assistant. Your goal is to help students understand concepts and solve problems. Provide clear, step-by-step explanations."""
+# Define subject-specific contexts
+subjects = {
+    "math": {
+        "title": "Mathematics",
+        "icon": "📐",
+        "description": "Algebra, Calculus, Geometry...",
+        "class": "math-card",
+        "context": """You are a specialized mathematics homework assistant. Help students understand mathematical concepts and solve problems by:
+
+1. Breaking down problems into clear steps
+2. Explaining mathematical concepts in simple language
+3. Providing visual explanations where possible
+4. Showing all work and calculations
+5. Connecting concepts to real-world applications
+
+Focus on helping students truly understand the material, not just get answers. For algebra, calculus, geometry, trigonometry, statistics, and other mathematical topics, show step-by-step solutions with clear explanations for each step."""
+    },
+    "science": {
+        "title": "Science",
+        "icon": "🔬",
+        "description": "Physics, Chemistry, Biology...",
+        "class": "science-card",
+        "context": """You are a specialized science homework assistant. Help students understand scientific concepts and solve problems by:
+
+1. Explaining scientific concepts clearly with examples
+2. Breaking down complex problems into manageable steps
+3. Showing all calculations with proper units
+4. Connecting theoretical concepts to real-world applications
+5. Using diagrams and visual explanations where helpful (described in text)
+
+For physics, chemistry, biology, and other scientific disciplines, provide accurate information and step-by-step problem-solving approaches. Help students understand the underlying principles rather than just providing answers."""
+    },
+    "english": {
+        "title": "English",
+        "icon": "📝",
+        "description": "Grammar, Essays, Literature...",
+        "class": "language-card",
+        "context": """You are a specialized English language and literature homework assistant. Help students with:
+
+1. Grammar rules and proper usage
+2. Essay structure, thesis development, and argumentation
+3. Literary analysis and interpretation
+4. Vocabulary development and word choice
+5. Writing techniques and stylistic improvements
+
+For writing assignments, help students craft strong thesis statements, develop coherent arguments, and improve their writing style. For literature questions, help them analyze themes, characters, symbolism, and literary techniques. Provide examples and clear explanations rather than completing assignments for them."""
+    },
+    "history": {
+        "title": "History",
+        "icon": "📜",
+        "description": "World Events, Social Studies...",
+        "class": "history-card",
+        "context": """You are a specialized history and social studies homework assistant. Help students understand historical events and concepts by:
+
+1. Providing accurate historical information with proper context
+2. Explaining cause-and-effect relationships between events
+3. Analyzing multiple perspectives on historical events
+4. Connecting historical events to broader themes and patterns
+5. Helping students develop critical thinking about historical sources
+
+For history and social studies topics, provide comprehensive explanations that incorporate relevant dates, figures, and details. Help students understand not just what happened but why it happened and its significance."""
+    }
+}
 
 # Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "active_subject" not in st.session_state:
+    st.session_state.active_subject = None
 if "context" not in st.session_state:
-    st.session_state.context = ai_context
+    st.session_state.context = "You are a helpful homework assistant."
 if "model_name" not in st.session_state:
     st.session_state.model_name = "gemini-1.5-flash"
 if "temperature" not in st.session_state:
     st.session_state.temperature = 0.7
 if "thinking" not in st.session_state:
     st.session_state.thinking = False
-
-# Subject definitions - simple dictionary format
-subjects = {
-    "math": {
-        "title": "Mathematics",
-        "icon": "📐",
-        "description": "Algebra, Calculus, Geometry...",
-        "class": "math-card"
-    },
-    "science": {
-        "title": "Science",
-        "icon": "🔬",
-        "description": "Physics, Chemistry, Biology...",
-        "class": "science-card"
-    },
-    "english": {
-        "title": "English",
-        "icon": "📝",
-        "description": "Grammar, Essays, Literature...",
-        "class": "language-card"
-    },
-    "history": {
-        "title": "History",
-        "icon": "📜",
-        "description": "World Events, Social Studies...",
-        "class": "history-card"
-    }
-}
 
 # Configure Gemini API
 load_dotenv()
@@ -422,13 +458,14 @@ def set_subject(subject_key):
     
     # Start a new conversation with that subject
     st.session_state.messages = []
+    st.session_state.active_subject = subject_key
+    
+    # Set the subject-specific context
+    st.session_state.context = subjects[subject_key]["context"]
     
     # Add welcome message
     welcome_msg = f"👋 Welcome to the {subjects[subject_key]['title']} assistant! How can I help you today?"
     st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
-    
-    # Update context with subject
-    st.session_state.context = f"{ai_context} You are specifically helping with {subjects[subject_key]['title']} questions."
     
     # Force rerun
     st.rerun()
@@ -448,28 +485,71 @@ with st.sidebar:
     
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
-    # Subject cards
+    # Subject selection header
     st.markdown("### Choose a Subject")
     
-    # Generate subject cards dynamically
-    for key, subject in subjects.items():
-        html = f"""
-        <div class="subject-card {subject['class']}" data-subject="{key}">
-            <div class="icon">{subject['icon']}</div>
+    # Subject cards with integrated buttons
+    col1, col2 = st.columns(2)
+    
+    # Mathematics button
+    with col1:
+        st.markdown(f"""
+        <div class="subject-card math-card">
+            <div class="icon">{subjects['math']['icon']}</div>
             <div class="content">
-                <div class="title">{subject['title']}</div>
-                <div class="description">{subject['description']}</div>
+                <div class="title">{subjects['math']['title']}</div>
+                <div class="description">{subjects['math']['description']}</div>
             </div>
         </div>
-        """
-        st.markdown(html, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    with col2:
+        if st.button("Select Mathematics"):
+            set_subject("math")
     
-    # Create hidden buttons for the subject selection
-    st.markdown('<div class="hidden-buttons">', unsafe_allow_html=True)
-    for key, subject in subjects.items():
-        if st.button(f"Select {subject['title']}", key=f"btn_{key}", args=(key,), on_click=set_subject):
-            pass  # The on_click handles the action
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Science button
+    with col1:
+        st.markdown(f"""
+        <div class="subject-card science-card">
+            <div class="icon">{subjects['science']['icon']}</div>
+            <div class="content">
+                <div class="title">{subjects['science']['title']}</div>
+                <div class="description">{subjects['science']['description']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        if st.button("Select Science"):
+            set_subject("science")
+    
+    # English button
+    with col1:
+        st.markdown(f"""
+        <div class="subject-card language-card">
+            <div class="icon">{subjects['english']['icon']}</div>
+            <div class="content">
+                <div class="title">{subjects['english']['title']}</div>
+                <div class="description">{subjects['english']['description']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        if st.button("Select English"):
+            set_subject("english")
+    
+    # History button
+    with col1:
+        st.markdown(f"""
+        <div class="subject-card history-card">
+            <div class="icon">{subjects['history']['icon']}</div>
+            <div class="content">
+                <div class="title">{subjects['history']['title']}</div>
+                <div class="description">{subjects['history']['description']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        if st.button("Select History"):
+            set_subject("history")
     
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
@@ -499,6 +579,8 @@ with st.sidebar:
     # New conversation button
     if st.button("🔄 New Conversation", use_container_width=True):
         st.session_state.messages = []
+        st.session_state.active_subject = None
+        st.session_state.context = "You are a helpful homework assistant."
         st.session_state.messages.append({
             "role": "assistant", 
             "content": "👋 I'm your homework assistant. Choose a subject or ask me any question!"
@@ -545,6 +627,30 @@ if prompt:
 # Handle AI response generation
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.thinking:
     user_input = st.session_state.messages[-1]["content"]
+    
+    # Detect subject if none is active
+    if not st.session_state.active_subject:
+        # Simple keyword matching for subject detection
+        subject_keywords = {
+            "math": ["math", "algebra", "calculus", "equation", "geometry", "number", "formula"],
+            "science": ["science", "physics", "chemistry", "biology", "molecule", "cell", "force", "atom"],
+            "english": ["english", "grammar", "essay", "write", "literature", "novel", "poem", "language"],
+            "history": ["history", "war", "revolution", "century", "ancient", "medieval", "civilization", "country"]
+        }
+        
+        detected_subject = None
+        max_matches = 0
+        
+        for subject, keywords in subject_keywords.items():
+            matches = sum(1 for keyword in keywords if keyword.lower() in user_input.lower())
+            if matches > max_matches:
+                max_matches = matches
+                detected_subject = subject
+        
+        # Use detected subject if we found a good match
+        if max_matches > 0:
+            st.session_state.active_subject = detected_subject
+            st.session_state.context = subjects[detected_subject]["context"]
     
     try:
         # Configure the model
