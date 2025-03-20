@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import time
 import os
-import re  # Expliciete import van re module
+import re
 from dotenv import load_dotenv
 
 # Set page config
@@ -116,15 +116,19 @@ def get_page_content():
         10. Het verband tussen het aantal en de kostprijs (in euro) is lineair.
         Vul de ontbrekende waarden in de tabel aan.
         
+        a. 
         Aantal | 0 | 1 | 2 | 3
         Kostprijs (€) | 50 | 40 | | 
         
+        b.
         Aantal | 0 | 1 | 2 | 3
         Kostprijs (€) | 10 | 15 | | 
         
+        c.
         Aantal | 0 | 1 | 2 | 3
         Kostprijs (€) | 16 | 16 | | 
         
+        d.
         Aantal | 0 | 1 | 2 | 3
         Kostprijs (€) | 0 | 2,5 | | 
         
@@ -134,15 +138,15 @@ def get_page_content():
         Product B: €1,25/stuk
         
         12. Vul de tabel aan met behulp van de formules.
-        12a. p = 4 x z
+        a. p = 4 x z
         z | 0 | 1 | 2 | 3 | 5 | 15
         p | | | | | | 
         
-        12b. p = 10 + (2 x t)
+        b. p = 10 + (2 x t)
         t | 0 | 1 | 2 | 3 | 5 | 15
         p | | | | | | 
         
-        12c. p = d x 3,14
+        c. p = d x 3,14
         d | 0 | 1 | 2 | 3 | 5 | 15
         p | | | | | | 
         
@@ -154,7 +158,7 @@ def get_page_content():
         Pagina 209 bevat de volgende opgaven:
         
         13. (vervolg)
-        13a. Vul de ontbrekende waarden in de tabellen aan.
+        a. Vul de ontbrekende waarden in de tabellen aan.
         
         Tabel A:
         t (h) | 0 | 1 | 2 | 3
@@ -172,15 +176,15 @@ def get_page_content():
         t (h) | 0 | 1 | 2 | 3
         T (°C) | 3 | 3 | 3 | 
         
-        13b. Welke tabel past bij welke formule?
+        b. Welke tabel past bij welke formule?
         T = 4 x t
         T = 1 + (3 x t)
         T = 3
         T = 8 - (2 x t)
         
-        13c. Welke tabel past bij welke grafiek? [Er zijn vier grafieken getoond in het boek]
+        c. Welke tabel past bij welke grafiek? [Er zijn vier grafieken getoond in het boek]
         
-        13d. Bij welke tabel merk je een stijgend lineair verband?
+        d. Bij welke tabel merk je een stijgend lineair verband?
         Bij welke tabel merk je een dalend lineair verband?
         Bij welke tabel merk je een constant lineair verband?
         """,
@@ -243,15 +247,15 @@ def get_page_content():
         c. Welke tabel past bij welke grafiek? [Er zijn grafieken getoond in het boek]
         
         17. Vul de tabel aan met behulp van de formules.
-        17a. z = 35 x t
+        a. z = 35 x t
         t | 0 | 1 | 2 | 3 | 5 | 10
         z | | | | | | 
         
-        17b. h = 100 - (5 x u)
+        b. h = 100 - (5 x u)
         u | 0 | 1 | 2 | 3 | 5 | 20
         h | | | | | | 
         
-        17c. k = 7,5 + (0,5 x m)
+        c. k = 7,5 + (0,5 x m)
         m | 0 | 1 | 2 | 3 | 5 | 30
         k | | | | | | 
         """,
@@ -289,8 +293,7 @@ def get_page_content():
     for page_num in range(213, 222):
         page_content[page_num] = f"""
         Pagina {page_num} bevat verschillende wiskundeopgaven over lineaire verbanden, 
-        formules, tabellen en grafieken. De opdrachten hebben vaak meerdere deelvragen
-        genummerd met letters (a, b, c, d, etc.).
+        formules, tabellen en grafieken. 
         """
     
     # Add more detailed information for specific pages
@@ -357,52 +360,30 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = None
 if "page_content_data" not in st.session_state:
     st.session_state.page_content_data = get_page_content()
+if "first_message_sent" not in st.session_state:
+    st.session_state.first_message_sent = False
 
-# Define wiskunde prompt template
-wiskunde_prompt = """# Wiskunde Huiswerk Helper Prompt
+# Define direct answers prompt
+direct_answers_prompt = """# Wiskunde Directe Antwoorden
 
-Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen van Nederlandse wiskundeproblemen voor middelbare scholieren. Je helpt leerlingen met hun wiskunde huiswerk door duidelijke, stapsgewijze uitleg te geven van de opgaven.
+Je taak is om directe, beknopte antwoorden te geven op wiskundeopgaven zonder lange uitleg.
 
 ## Instructies:
 
-1. Als de leerling "alles" typt, moet je ALLE opgaven op de huidige pagina VOLLEDIG oplossen. Dit betekent:
-   - Geef voor elke opgave de volledige tekst van de opgave
-   - Geef een complete stapsgewijze uitwerking met alle stappen duidelijk uitgelegd
-   - Vul alle tabellen volledig in met de berekende waarden
-   - Geef de formules én de gebruikte getallen in elke berekening
-   - Geef alle antwoorden duidelijk aan
-   - Behandel elke deelvraag (a, b, c, etc.) afzonderlijk
+1. Als de leerling "alles" typt, geef ALLEEN de ANTWOORDEN voor ALLE opgaven op de pagina.
+   - GEEN uitleg, alleen de ingevulde tabellen of directe antwoorden
+   - Geen kopjes met "Opgave X" - alleen het nummer en direct het antwoord
 
-2. Als de leerling een specifiek paginanummer noemt, switch dan naar die pagina en beschrijf kort welke opdrachten er op die pagina staan.
+2. Geef alleen de antwoorden, geen uitleg of tussenstappen tenzij specifiek gevraagd
 
-3. Voor elke opdracht waar de leerling om vraagt:
-   - Lees de vraag zorgvuldig
-   - Geef een volledige, stapsgewijze oplossing
-   - Leg de wiskundige concepten duidelijk uit
-   - Toon alle berekeningen
-   - Presenteer het antwoord in de vorm zoals het werkboek verwacht
+3. Voor tabellen, geef alleen de volledig ingevulde tabel zonder uitleg
 
-4. Focus op de volgende onderwerpen die in het werkboek voorkomen:
-   - Lineaire verbanden
-   - Formules en vergelijkingen
-   - Grafieken interpreteren en opstellen
-   - Tabellen invullen
-   - Toepassingsproblemen (kosten, tijd, afstand, etc.)
-   - Stijgende, dalende of constante verbanden
+4. Houd het format consistent:
+   - Bij tabellen, toon alleen de volledig ingevulde tabel
+   - Bij formules, geef alleen het eindresultaat
+   - Bij ja/nee vragen, geef alleen het antwoord
 
-5. Gebruik de juiste Nederlandse wiskundige terminologie.
-
-6. Als er meerdere vragen op een pagina staan (a, b, c, d, etc.), behandel ze dan één voor één en markeer duidelijk welke vraag je beantwoordt.
-
-7. Als een tabel moet worden ingevuld, maak dan een duidelijke tabel met alle berekende waarden.
-
-8. Voor grafiekvragen, leg uit welke grafiek bij welke formule hoort en waarom.
-
-9. Blijf vriendelijk, geduldig en begrijpend, maar blijf altijd in het Nederlands antwoorden.
-
-10. Als een vraag extra uitleg nodig heeft, geef dan aanvullende context over het wiskundige concept.
-
-Herinner je: het doel is om de leerling te helpen de stof te begrijpen, niet alleen de antwoorden te geven.
+5. Geen inleidingen, geen conclusies, alleen de directe antwoorden
 """
 
 # Define presets
@@ -501,7 +482,7 @@ Hoe je presenteert en hoe goed men je begrijpt: /10
 Veel succes!"""
     },
     "wiskunde huiswerk": {
-        "content": wiskunde_prompt
+        "content": direct_answers_prompt
     }
 }
 
@@ -521,6 +502,7 @@ with st.sidebar:
         st.session_state.active_chat = None
         st.session_state.context = ""
         st.session_state.current_page = None
+        st.session_state.first_message_sent = False
         st.rerun()
     
     # Homework sections
@@ -532,12 +514,9 @@ with st.sidebar:
             if st.button("Wiskunde", key="wiskunde_btn"):
                 st.session_state.messages = []
                 st.session_state.context = presets["wiskunde huiswerk"]["content"]
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
-                })
                 st.session_state.show_presets = False
                 st.session_state.active_chat = "Wiskunde Huiswerk Helper"
+                # No initial message - wait for page selection
                 st.rerun()
         
         with col2:
@@ -550,6 +529,7 @@ with st.sidebar:
                 })
                 st.session_state.show_presets = False
                 st.session_state.active_chat = "Duitse Deelstaten Referentie"
+                st.session_state.first_message_sent = True
                 st.rerun()
     
     # Page selector for Wiskunde (only shown when in Wiskunde mode)
@@ -567,12 +547,15 @@ with st.sidebar:
             if selected_page != st.session_state.current_page:
                 st.session_state.current_page = selected_page
                 
-                # Add the page selection message to the chat history
-                st.session_state.messages.append({
-                    "role": "user", 
-                    "content": f"maak pagina {selected_page}"
-                })
-                st.rerun()
+                # Automatically generate answers for the selected page
+                if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
+                    st.session_state.messages = []  # Clear previous messages
+                    st.session_state.messages.append({
+                        "role": "user", 
+                        "content": "alles"
+                    })
+                    st.session_state.first_message_sent = True
+                    st.rerun()
     
     # Minimal AI Settings
     with st.expander("🤖 AI Instellingen", expanded=False):
@@ -596,41 +579,13 @@ with st.sidebar:
             value=st.session_state.temperature,
             step=0.1
         )
-    
-    # Context management
-    with st.expander("📄 Context", expanded=False):
-        custom_context = st.text_area(
-            "Context:",
-            value=st.session_state.context,
-            height=200
-        )
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Opslaan"):
-                st.session_state.context = custom_context
-                st.success("Opgeslagen!")
-        with col2:
-            if st.button("Wissen"):
-                st.session_state.context = ""
-                st.rerun()
 
 # Main content area with chat interface
 main_container = st.container()
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# Initial greeting
-if st.session_state.show_presets and not st.session_state.messages:
-    with main_container:
-        st.session_state.messages = []
-        st.session_state.context = ""
-        st.session_state.messages.append({
-            "role": "assistant", 
-            "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
-        })
-        st.session_state.show_presets = False
-        st.rerun()
+# Skip initial greeting - wait for page selection
 
 # Display chat messages
 with main_container:
@@ -655,6 +610,7 @@ if prompt:
     # Add user message to session state
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.show_presets = False
+    st.session_state.first_message_sent = True
     
     # Create active chat if none exists
     if not st.session_state.active_chat:
@@ -665,7 +621,7 @@ if prompt:
     st.rerun()
 
 # Handle AI response generation (after rerun with user message visible)
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.first_message_sent:
     user_input = st.session_state.messages[-1]["content"]
     
     try:
@@ -707,66 +663,24 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.current_page:
                 page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
                 
-                # Check if it's "alles" command
-                if user_input.lower().strip() == "alles":
-                    complete_prompt = f"""
-                    Context informatie:
-                    {st.session_state.context}
-                    
-                    Paginainhoud:
-                    {page_content}
-                    
-                    De leerling heeft "alles" getypt voor pagina {st.session_state.current_page}. 
-                    
-                    BELANGRIJK: Je MOET alle opgaven op deze pagina VOLLEDIG uitwerken. 
-                    Geef voor elke opgave:
-                    1. De volledige opgavetekst
-                    2. Een volledige stapsgewijze uitwerking waarin je elke berekening toont
-                    3. Tabellen die VOLLEDIG zijn ingevuld (niet met voorbeeldwaarden, maar met de werkelijke berekende waarden)
-                    4. Duidelijke tussenstappen en uitleg
-                    5. Het eindantwoord duidelijk gemarkeerd
-                    
-                    Behandel elke deelvraag (a, b, c, etc.) volledig en afzonderlijk met een eigen tussenkop.
-                    Gebruik duidelijke kopjes voor elke opgave zoals "## Opgave 10" en "### Opgave 10a" voor deelvragen.
-                    
-                    BELANGRIJK: Ik wil dat je ALLE berekeningen uitvoert en EXACTE antwoorden geeft, niet alleen uitlegt hoe je het zou kunnen doen.
-                    
-                    Als een uitwerking erg lang wordt, splits deze dan op in duidelijke stappen maar blijf ALLE stappen tonen.
-                    """
-                elif "maak" in user_input.lower() and "pagina" in user_input.lower():
-                    complete_prompt = f"""
-                    Context informatie:
-                    {st.session_state.context}
-                    
-                    Paginainhoud:
-                    {page_content}
-                    
-                    De leerling vraagt om pagina {st.session_state.current_page} te behandelen. Geef een overzicht van alle opgaven op deze pagina, en vraag aan de leerling 
-                    welke specifieke opgave(n) ze willen behandelen. Vermeld dat de leerling ook "alles" kan typen om alle opgaven op deze pagina volledig uitgewerkt te krijgen.
-                    """
-                else:
-                    # Handle specific exercise requests
-                    complete_prompt = f"""
-                    Context informatie:
-                    {st.session_state.context}
-                    
-                    Paginainhoud:
-                    {page_content}
-                    
-                    De leerling werkt aan pagina {st.session_state.current_page} en vraagt: "{user_input}"
-                    
-                    Beantwoord deze vraag volgens de volgende richtlijnen:
-                    1. Als het een specifieke opdracht betreft (zoals "10a" of "opgave 12"), behandel deze volledig 
-                    2. Geef een stapsgewijze uitleg in duidelijk Nederlands
-                    3. Toon ALLE berekeningen en tussenresultaten
-                    4. Leg de wiskundige concepten helder uit
-                    5. Focus op het helpen van de leerling om het concept te begrijpen
-                    6. Bij tabellen of grafieken, geef een duidelijke uitleg van de relatie
-                    7. Houd de uitleg bondig maar volledig
-                    
-                    Als er specifieke opdrachtennummers worden genoemd, behandel die exact en volledig.
-                    BELANGRIJK: Vul ALLE tabellen volledig in met de berekende waarden, niet alleen met voorbeeldwaarden.
-                    """
+                # For all commands, just get direct answers without explanations
+                complete_prompt = f"""
+                Context informatie:
+                {st.session_state.context}
+                
+                Paginainhoud:
+                {page_content}
+                
+                De leerling werkt aan pagina {st.session_state.current_page} en wil alleen directe antwoorden zien. Geef voor alle opgaven op deze pagina:
+                1. ALLEEN de ANTWOORDEN - geen uitleg
+                2. De ingevulde tabellen ZONDER uitleg hoe je tot de waarden komt
+                3. De direct antwoorden op vragen ZONDER toelichting
+                
+                ZEER BELANGRIJK: Begin NIET met "Opgave 10", "Opgave 11" etc. Geef alleen de nummers (10a, 10b, etc.) gevolgd door de antwoorden.
+                GEBRUIK GEEN KOPJES "Opdracht X" - begin direct met het antwoord.
+                
+                De leerling wil alleen de resultaten, niet hoe je er komt!
+                """
             else:
                 # Try to extract a page number from the numeric input
                 if user_input.isdigit() and 208 <= int(user_input) <= 221:
@@ -780,8 +694,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Paginainhoud:
                     {page_content}
                     
-                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Geef een overzicht van alle opdrachten op deze pagina, en vraag de leerling 
-                    welke specifieke opgave(n) ze willen behandelen. Vermeld dat de leerling ook "alles" kan typen om alle opgaven op deze pagina volledig uitgewerkt te krijgen.
+                    De leerling heeft pagina {st.session_state.current_page} geselecteerd en wil direct alle antwoorden zien.
+                    Geef ALLEEN de ANTWOORDEN voor ALLE opgaven op deze pagina zonder enige uitleg of toelichting.
+                    Toon de ingevulde tabellen, de directe antwoorden op vragen, allemaal ZONDER uitleg hoe je tot deze antwoorden komt.
                     """
                 else:
                     # No page selected yet
@@ -789,11 +704,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Context informatie:
                     {st.session_state.context}
                     
-                    De leerling heeft nog geen specifieke pagina geselecteerd en vraagt: "{user_input}"
-                    
-                    Controleer eerst of de leerling een paginanummer noemt (tussen 208-221). 
-                    Zo ja, focus op die pagina. Zo nee, vraag de leerling om een paginanummer te selecteren 
-                    uit het bereik 208-221, of gebruik de dropdown in het zijpaneel.
+                    De leerling heeft nog geen specifieke pagina geselecteerd.
+                    Vraag heel kort en simpel om een paginanummer tussen 208-221 te selecteren via de dropdown in het zijpaneel of door een nummer te typen.
                     """
         else:
             complete_prompt = user_input
