@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import time
 import os
-import base64
+import re  # Expliciete import van re module toegevoegd
 from dotenv import load_dotenv
 
 # Set page config
@@ -106,12 +106,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Define function to get encoded images for each page
-def get_page_images():
-    # Dictionary of encoded page images for embedding
-    page_images = {
-        # For each page in the workbook, we'll store base64 encoded image data
-        # This is just an example with synthetic data - you would need to add the actual images
+# Define function to get page content
+def get_page_content():
+    # Dictionary of page content descriptions
+    page_content = {
         208: """
         Pagina 208 bevat de volgende opgaven:
         
@@ -173,14 +171,14 @@ def get_page_images():
     
     # Simplified content for the remaining pages
     for page_num in range(213, 222):
-        page_images[page_num] = f"""
+        page_content[page_num] = f"""
         Pagina {page_num} bevat verschillende wiskundeopgaven over lineaire verbanden, 
         formules, tabellen en grafieken. De opdrachten hebben vaak meerdere deelvragen
         genummerd met letters (a, b, c, d, etc.).
         """
     
     # Add more detailed information for specific pages
-    page_images[218] = """
+    page_content[218] = """
     Pagina 218 bevat de volgende opgaven:
     
     30. Twee cilindervorming kaarsen branden gelijkmatig op.
@@ -205,7 +203,7 @@ def get_page_images():
     d. Hoeveel moet je dan betalen?
     """
     
-    page_images[219] = """
+    page_content[219] = """
     Pagina 219 bevat de volgende opgaven:
     
     32. Tuiniersbedrijf VABI rekent voor het onderhoud van een tuin € 75 plus € 3,45 per m².
@@ -222,7 +220,7 @@ def get_page_images():
        Rond af op de eenheid.
     """
     
-    return page_images
+    return page_content
 
 # Initialize session state variables
 if "messages" not in st.session_state:
@@ -241,10 +239,10 @@ if "copied_message" not in st.session_state:
     st.session_state.copied_message = None
 if "current_page" not in st.session_state:
     st.session_state.current_page = None
-if "page_images" not in st.session_state:
-    st.session_state.page_images = get_page_images()
+if "page_content_data" not in st.session_state:
+    st.session_state.page_content_data = get_page_content()
 
-# Define wiskunde prompt
+# Define wiskunde prompt template
 wiskunde_prompt = """# Wiskunde Huiswerk Helper Prompt
 
 Je bent een behulpzame wiskunde assistent die gespecialiseerd is in het oplossen van Nederlandse wiskundeproblemen voor middelbare scholieren. Je helpt leerlingen met hun wiskunde huiswerk door duidelijke, stapsgewijze uitleg te geven van de opgaven.
@@ -557,26 +555,17 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         # Check if user is requesting a specific page in Wiskunde mode
         if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
-            # Check for page selection command
+            # Check for page number in the input
             if "pagina" in user_input.lower():
-                try:
-                    import re
-                    page_nums = re.findall(r'\d+', user_input)
-                    if page_nums:
-                        page_num = int(page_nums[0])
-                        if 208 <= page_num <= 221:
-                            st.session_state.current_page = page_num
-                except:
-                    pass
+                page_nums = [int(s) for s in user_input.split() if s.isdigit() and 208 <= int(s) <= 221]
+                if page_nums:
+                    st.session_state.current_page = page_nums[0]
             
-            # Check for "maak pagina X" or "maken pagina X" pattern
-            if re.search(r'maak(?:en)?\s+pagina\s+\d+', user_input.lower()):
-                try:
-                    page_num = int(re.findall(r'\d+', user_input)[0])
-                    if 208 <= page_num <= 221:
-                        st.session_state.current_page = page_num
-                except:
-                    pass
+            # Alternative detection for "maak pagina X" pattern
+            if "maak" in user_input.lower() and "pagina" in user_input.lower():
+                page_nums = [int(s) for s in user_input.split() if s.isdigit() and 208 <= int(s) <= 221]
+                if page_nums:
+                    st.session_state.current_page = page_nums[0]
         
         # Prepare prompt with context if needed
         if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
@@ -594,7 +583,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             """
         elif st.session_state.active_chat == "Wiskunde Huiswerk Helper" and st.session_state.context:
             if st.session_state.current_page:
-                page_content = st.session_state.page_images.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
+                page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
                 
                 # Check if it's "alles" command
                 if user_input.lower().strip() == "alles":
@@ -648,17 +637,33 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Als er specifieke opdrachtennummers worden genoemd, behandel die exact en volledig.
                     """
             else:
-                # No page selected yet
-                complete_prompt = f"""
-                Context informatie:
-                {st.session_state.context}
-                
-                De leerling heeft nog geen specifieke pagina geselecteerd en vraagt: "{user_input}"
-                
-                Controleer eerst of de leerling een paginanummer noemt (tussen 208-221). 
-                Zo ja, focus op die pagina. Zo nee, vraag de leerling om een paginanummer te selecteren 
-                uit het bereik 208-221, of gebruik de dropdown in het zijpaneel.
-                """
+                # Try to extract a page number from the numeric input
+                if user_input.isdigit() and 208 <= int(user_input) <= 221:
+                    st.session_state.current_page = int(user_input)
+                    page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
+                    
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Geef een overzicht van alle opdrachten op deze pagina, en vraag de leerling 
+                    welke specifieke opgave(n) ze willen behandelen. Bijvoorbeeld: "Opdracht 10a, 10b, 11, 12a" of "alles" voor alle opgaven op de pagina.
+                    """
+                else:
+                    # No page selected yet
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    De leerling heeft nog geen specifieke pagina geselecteerd en vraagt: "{user_input}"
+                    
+                    Controleer eerst of de leerling een paginanummer noemt (tussen 208-221). 
+                    Zo ja, focus op die pagina. Zo nee, vraag de leerling om een paginanummer te selecteren 
+                    uit het bereik 208-221, of gebruik de dropdown in het zijpaneel.
+                    """
         else:
             complete_prompt = user_input
         
