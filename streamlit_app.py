@@ -360,8 +360,6 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = None
 if "page_content_data" not in st.session_state:
     st.session_state.page_content_data = get_page_content()
-if "first_message_sent" not in st.session_state:
-    st.session_state.first_message_sent = False
 
 # Define direct answers prompt
 direct_answers_prompt = """# Wiskunde Directe Antwoorden
@@ -372,7 +370,6 @@ Je taak is om directe, beknopte antwoorden te geven op wiskundeopgaven zonder la
 
 1. Als de leerling "alles" typt, geef ALLEEN de ANTWOORDEN voor ALLE opgaven op de pagina.
    - GEEN uitleg, alleen de ingevulde tabellen of directe antwoorden
-   - Geen kopjes met "Opgave X" - alleen het nummer en direct het antwoord
 
 2. Geef alleen de antwoorden, geen uitleg of tussenstappen tenzij specifiek gevraagd
 
@@ -502,7 +499,6 @@ with st.sidebar:
         st.session_state.active_chat = None
         st.session_state.context = ""
         st.session_state.current_page = None
-        st.session_state.first_message_sent = False
         st.rerun()
     
     # Homework sections
@@ -514,9 +510,12 @@ with st.sidebar:
             if st.button("Wiskunde", key="wiskunde_btn"):
                 st.session_state.messages = []
                 st.session_state.context = presets["wiskunde huiswerk"]["content"]
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": "Welke pagina('s) van je wiskunde werkboek wil je behandelen? (pagina 208-221)"
+                })
                 st.session_state.show_presets = False
                 st.session_state.active_chat = "Wiskunde Huiswerk Helper"
-                # No initial message - wait for page selection
                 st.rerun()
         
         with col2:
@@ -529,33 +528,7 @@ with st.sidebar:
                 })
                 st.session_state.show_presets = False
                 st.session_state.active_chat = "Duitse Deelstaten Referentie"
-                st.session_state.first_message_sent = True
                 st.rerun()
-    
-    # Page selector for Wiskunde (only shown when in Wiskunde mode)
-    if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
-        with st.expander("📝 Wiskunde Pagina's", expanded=True):
-            # Page range for the workbook
-            page_range = list(range(208, 222))  # Pages 208-221
-            
-            selected_page = st.selectbox(
-                "Selecteer een pagina:",
-                page_range,
-                index=0 if not st.session_state.current_page else page_range.index(st.session_state.current_page)
-            )
-            
-            if selected_page != st.session_state.current_page:
-                st.session_state.current_page = selected_page
-                
-                # Automatically generate answers for the selected page
-                if st.session_state.active_chat == "Wiskunde Huiswerk Helper":
-                    st.session_state.messages = []  # Clear previous messages
-                    st.session_state.messages.append({
-                        "role": "user", 
-                        "content": "alles"
-                    })
-                    st.session_state.first_message_sent = True
-                    st.rerun()
     
     # Minimal AI Settings
     with st.expander("🤖 AI Instellingen", expanded=False):
@@ -585,7 +558,17 @@ main_container = st.container()
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# Skip initial greeting - wait for page selection
+# Initial greeting
+if st.session_state.show_presets and not st.session_state.messages:
+    with main_container:
+        st.session_state.messages = []
+        st.session_state.context = ""
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": "Hallo! Hoe kan ik je vandaag helpen met je huiswerk?"
+        })
+        st.session_state.show_presets = False
+        st.rerun()
 
 # Display chat messages
 with main_container:
@@ -610,7 +593,6 @@ if prompt:
     # Add user message to session state
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.show_presets = False
-    st.session_state.first_message_sent = True
     
     # Create active chat if none exists
     if not st.session_state.active_chat:
@@ -621,7 +603,7 @@ if prompt:
     st.rerun()
 
 # Handle AI response generation (after rerun with user message visible)
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.first_message_sent:
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     user_input = st.session_state.messages[-1]["content"]
     
     try:
@@ -644,6 +626,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 page_nums = [int(s) for s in user_input.split() if s.isdigit() and 208 <= int(s) <= 221]
                 if page_nums:
                     st.session_state.current_page = page_nums[0]
+            
+            # Direct page number input
+            if user_input.isdigit() and 208 <= int(user_input) <= 221:
+                st.session_state.current_page = int(user_input)
         
         # Prepare prompt with context if needed
         if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
@@ -663,26 +649,38 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             if st.session_state.current_page:
                 page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
                 
-                # For all commands, just get direct answers without explanations
-                complete_prompt = f"""
-                Context informatie:
-                {st.session_state.context}
-                
-                Paginainhoud:
-                {page_content}
-                
-                De leerling werkt aan pagina {st.session_state.current_page} en wil alleen directe antwoorden zien. Geef voor alle opgaven op deze pagina:
-                1. ALLEEN de ANTWOORDEN - geen uitleg
-                2. De ingevulde tabellen ZONDER uitleg hoe je tot de waarden komt
-                3. De direct antwoorden op vragen ZONDER toelichting
-                
-                ZEER BELANGRIJK: Begin NIET met "Opgave 10", "Opgave 11" etc. Geef alleen de nummers (10a, 10b, etc.) gevolgd door de antwoorden.
-                GEBRUIK GEEN KOPJES "Opdracht X" - begin direct met het antwoord.
-                
-                De leerling wil alleen de resultaten, niet hoe je er komt!
-                """
+                # Check if it's "alles" command
+                if user_input.lower().strip() == "alles":
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling heeft "alles" getypt voor pagina {st.session_state.current_page}. 
+                    
+                    BELANGRIJK: Geef ALLEEN de ANTWOORDEN voor ALLE opgaven op deze pagina zonder enige uitleg. 
+                    GEEN kopjes met "Opgave X" - alleen het nummer (10a, 10b, etc.) en direct het antwoord.
+                    
+                    Tabellen moeten volledig zijn ingevuld, maar zonder uitleg hoe je de waarden berekend hebt.
+                    """
+                else:
+                    # Handle page selection or specific exercise
+                    complete_prompt = f"""
+                    Context informatie:
+                    {st.session_state.context}
+                    
+                    Paginainhoud:
+                    {page_content}
+                    
+                    De leerling werkt aan pagina {st.session_state.current_page} en vraagt: "{user_input}"
+                    
+                    Geef ALLEEN de antwoorden zonder uitleg. Als het om een specifieke opgave gaat, geef alleen het antwoord.
+                    Als de leerling iets anders vraagt, reageer kort en vraag of ze "alles" willen typen om alle antwoorden te zien.
+                    """
             else:
-                # Try to extract a page number from the numeric input
+                # No page selected yet - extract from numeric input if possible
                 if user_input.isdigit() and 208 <= int(user_input) <= 221:
                     st.session_state.current_page = int(user_input)
                     page_content = st.session_state.page_content_data.get(st.session_state.current_page, f"Pagina {st.session_state.current_page} bevat diverse wiskundeopgaven.")
@@ -694,9 +692,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Paginainhoud:
                     {page_content}
                     
-                    De leerling heeft pagina {st.session_state.current_page} geselecteerd en wil direct alle antwoorden zien.
-                    Geef ALLEEN de ANTWOORDEN voor ALLE opgaven op deze pagina zonder enige uitleg of toelichting.
-                    Toon de ingevulde tabellen, de directe antwoorden op vragen, allemaal ZONDER uitleg hoe je tot deze antwoorden komt.
+                    De leerling heeft pagina {st.session_state.current_page} geselecteerd. Vraag in één korte zin of ze "alles" willen zien (alle antwoorden voor deze pagina).
                     """
                 else:
                     # No page selected yet
@@ -704,8 +700,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     Context informatie:
                     {st.session_state.context}
                     
-                    De leerling heeft nog geen specifieke pagina geselecteerd.
-                    Vraag heel kort en simpel om een paginanummer tussen 208-221 te selecteren via de dropdown in het zijpaneel of door een nummer te typen.
+                    De leerling heeft nog geen specifieke pagina geselecteerd. Vraag om alleen een paginanummer in te typen (tussen 208-221).
                     """
         else:
             complete_prompt = user_input
