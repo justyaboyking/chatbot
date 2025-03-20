@@ -359,11 +359,23 @@ if prompt:
         else:
             complete_prompt = prompt
         
-        # Generate AI response
-        response = model.generate_content(complete_prompt)
-        if hasattr(response, 'text'):
-            full_response = response.text
-            # Add assistant message to chat history
+        # Generate AI response with streaming
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            
+            # Stream the response
+            response = model.generate_content(
+                complete_prompt,
+                stream=True
+            )
+            
+            for chunk in response:
+                if hasattr(chunk, 'text'):
+                    full_response += chunk.text
+                    message_placeholder.markdown(full_response)
+                    
+            # Add assistant message to chat history after streaming completes
             st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     except Exception as e:
