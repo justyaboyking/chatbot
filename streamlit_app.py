@@ -326,56 +326,64 @@ with main_container:
                 st.success("Tekst gekopieerd!")
                 time.sleep(1)
                 st.session_state.copied_message = None
-    
-    # Chat input
-    if prompt := st.chat_input("Typ je vraag hier..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.show_presets = False
-        
-        with st.chat_message("user"):
-            st.markdown(prompt)
-            
-        # Create active chat if none exists
-        if not st.session_state.active_chat:
-            chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
-            st.session_state.active_chat = chat_title
-        
-        try:
-            model = genai.GenerativeModel(
-                st.session_state.model_name,
-                generation_config={"temperature": st.session_state.temperature}
-            )
-            
-            # Handle context for German states reference
-            if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
-                complete_prompt = f"""
-                Context informatie:
-                {st.session_state.context}
-                
-                Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{prompt}" en volg exact de structuur uit de context:
-                
-                1. Gebruik precies de secties zoals aangegeven in de context
-                2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
-                3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
-                4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
-                5. Zorg dat elke sectie apart en duidelijk leesbaar is
-                """
-            else:
-                complete_prompt = prompt
-            
-            with st.chat_message("assistant"):
-                message_placeholder = st.empty()
-                response = model.generate_content(
-                    complete_prompt,
-                    stream=True
-                )
-                full_response = ""
-                for chunk in response:
-                    if hasattr(chunk, 'text'):
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Chat input - MOVED OUTSIDE OF ANY CONTAINER
+if prompt := st.chat_input("Typ je vraag hier..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.show_presets = False
+    
+    # Create active chat if none exists
+    if not st.session_state.active_chat:
+        chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
+        st.session_state.active_chat = chat_title
+    
+    try:
+        model = genai.GenerativeModel(
+            st.session_state.model_name,
+            generation_config={"temperature": st.session_state.temperature}
+        )
+        
+        # Handle context for German states reference
+        if st.session_state.active_chat == "Duitse Deelstaten Referentie" and st.session_state.context:
+            complete_prompt = f"""
+            Context informatie:
+            {st.session_state.context}
+            
+            Op basis van bovenstaande context, geef informatie over de Duitse deelstaat "{prompt}" en volg exact de structuur uit de context:
+            
+            1. Gebruik precies de secties zoals aangegeven in de context
+            2. Zet elke sectie en item op een nieuwe regel met een lege regel ertussen
+            3. Gebruik duidelijke koppen gevolgd door dubbele regeleinden
+            4. Antwoord alleen met de gestructureerde informatie, zonder inleidingen of conclusies
+            5. Zorg dat elke sectie apart en duidelijk leesbaar is
+            """
+        else:
+            complete_prompt = prompt
+        
+        # Add user message to chat history display
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Generate AI response
+        response = model.generate_content(
+            complete_prompt,
+            stream=True
+        )
+        
+        full_response = ""
+        
+        # Process the response
+        for chunk in response:
+            if hasattr(chunk, 'text'):
+                full_response += chunk.text
+        
+        # Add assistant message to chat history
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        
+        # Rerun to display the new messages
+        st.rerun()
+        
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+        st.rerun()
