@@ -99,6 +99,56 @@ st.markdown("""
         padding: 5px 10px;
         border-radius: 4px;
     }
+    
+    /* Thinking animation */
+    .thinking-dots {
+        display: inline-block;
+        margin-left: 4px;
+    }
+    .thinking-dots span {
+        animation: thinking 1.4s infinite;
+        animation-fill-mode: both;
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.8);
+        margin-right: 4px;
+    }
+    .thinking-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .thinking-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes thinking {
+        0%, 80%, 100% { opacity: 0; transform: scale(0.6); }
+        40% { opacity: 1; transform: scale(1); }
+    }
+    
+    .thinking-container {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        background-color: #2a2d36;
+        border-radius: 15px 15px 15px 0;
+        margin: 10px 0;
+        width: fit-content;
+    }
+    .thinking-icon {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+        100% { transform: scale(0.95); }
+    }
 </style>
 
 <div class="watermark">
@@ -360,6 +410,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = None
 if "page_content_data" not in st.session_state:
     st.session_state.page_content_data = get_page_content()
+if "thinking" not in st.session_state:
+    st.session_state.thinking = False
 
 # Define direct answers prompt
 formatted_answers_prompt = """# Wiskunde Antwoorden Formatter
@@ -536,6 +588,7 @@ with st.sidebar:
         st.session_state.active_chat = None
         st.session_state.context = ""
         st.session_state.current_page = None
+        st.session_state.thinking = False
         st.rerun()
     
     # Homework sections
@@ -621,6 +674,16 @@ with main_container:
                 time.sleep(0.5)
                 st.session_state.copied_message = None
                 st.rerun()
+    
+    # Display thinking animation if needed
+    if st.session_state.thinking:
+        with st.chat_message("assistant"):
+            st.markdown("""
+            <div class="thinking-container">
+                <div class="thinking-icon"></div>
+                Denken<div class="thinking-dots"><span></span><span></span><span></span></div>
+            </div>
+            """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -636,11 +699,14 @@ if prompt:
         chat_title = prompt[:20] + "..." if len(prompt) > 20 else prompt
         st.session_state.active_chat = chat_title
     
+    # Set thinking state to true
+    st.session_state.thinking = True
+    
     # Show user message immediately
     st.rerun()
 
 # Handle AI response generation (after rerun with user message visible)
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.thinking:
     user_input = st.session_state.messages[-1]["content"]
     
     try:
@@ -760,6 +826,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         else:
             complete_prompt = user_input
         
+        # Turn off thinking state
+        st.session_state.thinking = False
+        
         # Generate AI response with streaming
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
@@ -788,6 +857,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         # Add error message to chat
         st.session_state.messages.append({"role": "assistant", "content": f"Er is een fout opgetreden: {str(e)}"})
+        
+        # Turn off thinking state
+        st.session_state.thinking = False
     
     # Rerun to update UI with new messages
     st.rerun()
